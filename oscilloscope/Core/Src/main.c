@@ -95,6 +95,7 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
+static int conv_done = 0;
 char buf1[20];
 uint8_t* image;
 uint16_t waveform_CH1[MEMORY_DEPTH];
@@ -209,13 +210,16 @@ int main(void)
 
 	  //ILI9341_Fill_Screen(ILI9488_BLACK);
 	  //drawImage(image, 10, 10, 200, 1);
-
-	  draw_waveform(waveform_CH1, offset);
-	  //HAL_Delay(500);
-	  sprintf(buf1,"adc=%d", waveform_CH1[0]);
-	  fillRect(36, 1, 35, 18, RED);
-	  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
-	  HAL_Delay(500);
+	  if(conv_done){
+		  conv_done = 0;
+		  draw_waveform(waveform_CH1, offset);
+		  //HAL_Delay(500);
+		  sprintf(buf1,"adc=%d", waveform_CH1[0]);
+		  fillRect(36, 1, 35, 18, RED);
+		  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
+		  HAL_Delay(500);
+	  }
 
 
 
@@ -310,7 +314,10 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+	conv_done = 1;
+	HAL_ADC_Stop_DMA(hadc);
+}
 /* USER CODE END 4 */
 
 /**
