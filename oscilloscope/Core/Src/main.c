@@ -80,6 +80,7 @@
 
 #define LCD_WIDTH 480
 #define LCD_HEIGHT 320
+#define LCD_BRIGHTNESS 800 // 0-1000
 
 #define MEMORY_DEPTH 4096
 /* USER CODE END PD */
@@ -131,14 +132,18 @@ void drawGrid(){
 
 void draw_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
 	for(int i = 0; i < 480; ++i){
-		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i], GREEN);
+			drawPixel(i, LCD_HEIGHT/2 - x - waveform_CH1_prev[i]/40, BLACK);
+	}
+	drawGrid();
+	for(int i = 0; i < 480; ++i){
+		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, GREEN);
 		waveform_CH1_prev[i] = waveform_CH1[i];
 	  }
 }
 
 void erase_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
 	for(int i = 0; i < 480; ++i){
-		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i], BLACK);
+		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, BLACK);
 	  }
 }
 /* USER CODE END 0 */
@@ -179,7 +184,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 600); // 0-1000
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, LCD_BRIGHTNESS); // 0-1000
+  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 200); // 0-1000
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
@@ -200,12 +207,15 @@ int main(void)
   while (1)
   {
 
+	  //ILI9341_Fill_Screen(ILI9488_BLACK);
 	  //drawImage(image, 10, 10, 200, 1);
-	  erase_waveform(waveform_CH1_prev, offset);
-	  drawGrid();
+
 	  draw_waveform(waveform_CH1, offset);
 	  //HAL_Delay(500);
-
+	  sprintf(buf1,"adc=%d", waveform_CH1[0]);
+	  fillRect(36, 1, 35, 18, RED);
+	  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
+	  HAL_Delay(500);
 
 
 

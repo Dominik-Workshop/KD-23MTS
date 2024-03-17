@@ -66,10 +66,14 @@ void Error_Handler(void);
 #define LD2_GPIO_Port GPIOA
 #define TFT_DC_Pin GPIO_PIN_4
 #define TFT_DC_GPIO_Port GPIOC
+#define GEN_OUT_Pin GPIO_PIN_0
+#define GEN_OUT_GPIO_Port GPIOB
 #define TOUCH_CS_Pin GPIO_PIN_12
 #define TOUCH_CS_GPIO_Port GPIOB
 #define TFT_CS_Pin GPIO_PIN_8
 #define TFT_CS_GPIO_Port GPIOC
+#define TFT_LED_Pin GPIO_PIN_9
+#define TFT_LED_GPIO_Port GPIOC
 #define TFT_RST_Pin GPIO_PIN_10
 #define TFT_RST_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
