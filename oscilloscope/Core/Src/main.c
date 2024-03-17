@@ -19,6 +19,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -48,7 +49,15 @@
 #include "096_Open_Sans_Bold.h"
 #include "112_Open_Sans_Bold.h"
 #include "128_Open_Sans_Bold.h"
+/* USER CODE END Includes */
 
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
 #define _Open_Sans_Bold_8      &Open_Sans_Bold_8
 #define _Open_Sans_Bold_9      &Open_Sans_Bold_9
 #define _Open_Sans_Bold_10     &Open_Sans_Bold_10
@@ -69,19 +78,10 @@
 #define _Open_Sans_Bold_112      &Open_Sans_Bold_112
 #define _Open_Sans_Bold_128      &Open_Sans_Bold_128
 
-volatile uint8_t SPI1_TX_completed_flag = 1;
+#define LCD_WIDTH 480
+#define LCD_HEIGHT 320
 
-char buf1[20];
-uint8_t* image;
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
+#define MEMORY_DEPTH 4096
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,7 +92,12 @@ uint8_t* image;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+volatile uint8_t SPI1_TX_completed_flag = 1;
 
+char buf1[20];
+uint8_t* image;
+uint16_t waveform_CH1[MEMORY_DEPTH];
+uint16_t waveform_CH1_prev[MEMORY_DEPTH];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,7 +127,19 @@ void drawGrid(){
 		for(int j = 0; j < 480; j+=2)
 			drawPixel(j, i, ILI9488_DARKGREY);
 	}
+}
 
+void draw_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
+	for(int i = 0; i < 480; ++i){
+		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i], GREEN);
+		waveform_CH1_prev[i] = waveform_CH1[i];
+	  }
+}
+
+void erase_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
+	for(int i = 0; i < 480; ++i){
+		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i], BLACK);
+	  }
 }
 /* USER CODE END 0 */
 
@@ -158,21 +175,24 @@ int main(void)
   MX_SPI1_Init();
   MX_SPI2_Init();
   MX_TIM3_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 600); // 0-1000
-  //HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
   ILI9488_Init();
-
-  //   HAL_Delay(1000);
   setRotation(1);
-
   ILI9341_Fill_Screen(ILI9488_BLACK);
 
   //uint16_t touchX = 0, touchY = 0;
   for(int i = 0; i < 200; ++i){
 	  image[i] = color565(20, 50, 0);
   }
+  /*
+  for(int i = 0; i < 480; ++i){
+	waveform_CH1[i] = 40*sin(0.1*i);
+  }*/
+  int offset = -50;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -181,62 +201,36 @@ int main(void)
   {
 
 	  //drawImage(image, 10, 10, 200, 1);
-	  	  //HAL_Delay(500);
-	  	  //ILI9341_Fill_Screen(ILI9488_DARKGREY);
-	  	  drawGrid();
-
-	  	  for(int i = 0; i < 480; ++i){
-	  	  		drawPixel(i, 160+ 40*sin(0.1*i), GREEN);
-	  	  }
-	  	  //HAL_Delay(500);
-	  	  for(int i = 0; i < 480; ++i){
-	  	  	  		drawPixel(i, 160+ 40*sin(0.1*i), ILI9488_BLACK);
-
-	  	  }
-	  	  drawGrid();
-
-	  	  for(int i = 0; i < 480; ++i){
-	  	  	  		drawPixel(i, 160+ 40*sin(0.05*i), YELLOW);
-	  	  }
-	  	  //HAL_Delay(500);
-	  	  for(int i = 0; i < 480; ++i){
-	  	  	  	  		drawPixel(i, 160+ 40*sin(0.05*i), ILI9488_BLACK);
-
-	  	  	  }
-	  	  //CODE FOR DMA
-
-	  	  /*
-	  	  ILI9341_Fill_Screen(ILI9488_GREEN);
-	  	  ILI9341_Fill_Screen(ILI9488_BLUE);
-	  	  ILI9341_Fill_Screen(RED);
-	  	  ILI9341_Fill_Screen(ILI9488_MAGENTA);
-	  	  ILI9341_Fill_Screen(ILI9488_YELLOW);
-	  	  ILI9341_Fill_Screen(ILI9488_WHITE);
-	  	  ILI9341_Fill_Screen(ILI9488_ORANGE);
-	  	  ILI9341_Fill_Screen(ILI9488_OLIVE);
-
-	  	  ILI9341_Fill_Screen(ILI9488_GREEN);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_BLUE);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(RED);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_MAGENTA);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_YELLOW);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_WHITE);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, ILI9488_BLUE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, ILI9488_BLUE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_ORANGE);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  	  ILI9341_Fill_Screen(ILI9488_OLIVE);LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	      */
-	  	  //    CODE FOR TOUCH
+	  erase_waveform(waveform_CH1_prev, offset);
+	  drawGrid();
+	  draw_waveform(waveform_CH1, offset);
+	  //HAL_Delay(500);
 
 
-	  	  /*
-	  	  //char buf[20];
-	  	  //LCD_Font(25, 25, buf1, _Open_Sans_Bold_24  , 1, WHITE);
-	  	  touchX = getX();
-	  	  touchY = getY();
-	  	  //sprintf(buf,"x=%3d y=%3d",touchX,touchY);
-	  	  //sprintf(buf1,"x=%3d y=%3d",touchX,touchY);
-	  	  //LCD_Font(25, 25, buf, _Open_Sans_Bold_24  , 1, BLACK);
-	  	  fillRect(touchX, touchY,7,7, RED);
-	  	  */
+
+
+	  //CODE FOR DMA
+	  /*
+	  ILI9341_Fill_Screen(ILI9488_GREEN);
+	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
+	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
+	  ILI9341_Fill_Screen(ILI9488_BLUE);
+	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
+	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);
+	  HAL_Delay(1000);
+
+	  */
+	  //    CODE FOR TOUCH
+	  /*
+	  //char buf[20];
+	  //LCD_Font(25, 25, buf1, _Open_Sans_Bold_24  , 1, WHITE);
+	  touchX = getX();
+	  touchY = getY();
+	  //sprintf(buf,"x=%3d y=%3d",touchX,touchY);
+	  //sprintf(buf1,"x=%3d y=%3d",touchX,touchY);
+	  //LCD_Font(25, 25, buf, _Open_Sans_Bold_24  , 1, BLACK);
+	  fillRect(touchX, touchY,7,7, RED);
+	  */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -252,6 +246,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -280,6 +275,19 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
+  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSI;
+  PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
+  PeriphClkInit.PLLSAI1.PLLSAI1N = 8;
+  PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
+  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_ADC1CLK;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
