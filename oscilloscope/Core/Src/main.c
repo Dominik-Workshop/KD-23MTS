@@ -82,7 +82,7 @@
 #define LCD_HEIGHT 320
 #define LCD_BRIGHTNESS 800 // 0-1000
 
-#define MEMORY_DEPTH 4096
+#define MEMORY_DEPTH 512
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -118,10 +118,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 void drawGrid(){
 	// vertical lines
 	for(int i = 0; i < 480; i+=60){
-		for(int j = 20; j < 300; j+=2)
+		for(int j = 20; j < 320; j+=2)
 			drawPixel(i, j, ILI9488_DARKGREY);
 	}
-	for(int j = 20; j < 300; j+=2)
+	for(int j = 20; j < 320; j+=2)
 				drawPixel(479, j, ILI9488_DARKGREY);
 
 	// horizontal lines
@@ -129,23 +129,72 @@ void drawGrid(){
 		for(int j = 0; j < 480; j+=2)
 			drawPixel(j, i, ILI9488_DARKGREY);
 	}
+	for(int j = 0; j < 480; j+=2)
+				drawPixel(j, 319, ILI9488_DARKGREY);
 }
 
-void draw_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
+void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
 	for(int i = 0; i < 480; ++i){
-			drawPixel(i, LCD_HEIGHT/2 - x - waveform_CH1_prev[i]/40, BLACK);
-	}
-	drawGrid();
+			drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, BLACK);
+		if((i%2==0) || (i ==479)){
+			if(((LCD_HEIGHT/2 - x - waveform[i]/40) == 20) ||
+			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 80) ||
+			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 140) ||
+			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 200) ||
+			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 260) ||
+			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 319)){
+				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
+			}
+		}
+		if((i%60==0) || (i ==479)){
+			if(((LCD_HEIGHT/2 - x - waveform[i]/40) % 2) == 0){
+				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
+			}
+		}
+	  }
+}
+
+void draw_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
+	//for(int i = 0; i < 480; ++i){
+		//	drawPixel(i, LCD_HEIGHT/2 - x - waveform_CH1_prev[i]/40, BLACK);
+	//}
+	//drawGrid();
+	erase_waveform(waveform_CH1_prev, x);
+	//drawGrid();
 	for(int i = 0; i < 480; ++i){
 		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, GREEN);
 		waveform_CH1_prev[i] = waveform_CH1[i];
 	  }
+
+	// draw marker 0
+	for(int j = 0; j < 5; ++j){
+			drawPixel(j, LCD_HEIGHT/2 - x - 2, GREEN);
+		}
+	for(int j = 0; j < 6; ++j){
+		drawPixel(j, LCD_HEIGHT/2 - x - 1, GREEN);
+	}
+	for(int j = 0; j < 7; ++j){
+		drawPixel(j, LCD_HEIGHT/2 - x, GREEN);
+	}
+	for(int j = 0; j < 6; ++j){
+		drawPixel(j, LCD_HEIGHT/2 - x + 1, GREEN);
+	}
+	for(int j = 0; j < 5; ++j){
+			drawPixel(j, LCD_HEIGHT/2 - x + 2, GREEN);
+		}
+
 }
 
-void erase_waveform(int16_t waveform[MEMORY_DEPTH], uint x){
-	for(int i = 0; i < 480; ++i){
-		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, BLACK);
-	  }
+
+int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
+	uint32_t max=0, min=4096;
+	for(int i = 0; i < MEMORY_DEPTH; ++i){
+		if(waveform[i]<min)
+			min=waveform[i];
+		if(waveform[i]>max)
+			max=waveform[i];
+	}
+	return max-min;
 }
 /* USER CODE END 0 */
 
@@ -200,7 +249,8 @@ int main(void)
   for(int i = 0; i < 480; ++i){
 	waveform_CH1[i] = 40*sin(0.1*i);
   }*/
-  int offset = -50;
+  int offset = -40;
+  drawGrid();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -214,11 +264,11 @@ int main(void)
 		  conv_done = 0;
 		  draw_waveform(waveform_CH1, offset);
 		  //HAL_Delay(500);
-		  sprintf(buf1,"adc=%d", waveform_CH1[0]);
-		  fillRect(36, 1, 35, 18, RED);
+		  sprintf(buf1,"Vpp=%d", calculate_peak_to_peak(waveform_CH1));
+		  fillRect(39, 1, 35, 18, RED);
 		  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
 		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
-		  HAL_Delay(500);
+		  //HAL_Delay(1);
 	  }
 
 
