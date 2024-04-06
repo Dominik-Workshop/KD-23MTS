@@ -20,8 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
-#include "comp.h"
-#include "dac.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -32,7 +30,7 @@
 #include "ili9488.h"
 #include "xpt2046.h"
 #include "stdio.h"
-
+#include "oscilloscope.h"
 #include "008_Open_Sans_Bold.h"
 #include "009_Open_Sans_Bold.h"
 #include "010_Open_Sans_Bold.h"
@@ -51,15 +49,7 @@
 #include "096_Open_Sans_Bold.h"
 #include "112_Open_Sans_Bold.h"
 #include "128_Open_Sans_Bold.h"
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
 #define _Open_Sans_Bold_8      &Open_Sans_Bold_8
 #define _Open_Sans_Bold_9      &Open_Sans_Bold_9
 #define _Open_Sans_Bold_10     &Open_Sans_Bold_10
@@ -80,13 +70,17 @@
 #define _Open_Sans_Bold_112      &Open_Sans_Bold_112
 #define _Open_Sans_Bold_128      &Open_Sans_Bold_128
 
-#define LCD_WIDTH 480
-#define LCD_HEIGHT 320
-#define LCD_BRIGHTNESS 800 // 0-1000
+/* USER CODE END Includes */
 
-#define CANVA_MIDDLE_V 170
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
 
-#define MEMORY_DEPTH  480//512
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -99,18 +93,7 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
-typedef struct oscilloscope_ch{
-	uint16_t waveform[MEMORY_DEPTH];				// all samples
 
-	int16_t x_offset;								// horizontal offset
-	int16_t y_offset;								// vertical offset (offset = 0 => 0V = middle of the display)
-
-	int16_t y_scale;								// vertical scale [V/div]
-
-	uint16_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed
-	uint16_t waveform_display_previous[LCD_WIDTH];	// section of waveform previously displayed, used to clear old waveform
-
-}oscilloscope_channel;
 
 
 static int conv_done = 0;
@@ -131,99 +114,8 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 	SPI1_TX_completed_flag = 1;
 }
 
-oscilloscope_channel_init(oscilloscope_channel* ch){
-	ch->x_offset = 0;
-	ch->y_offset = 0;
-	ch->y_scale = 0;
-}
-
-void drawGrid(){
-	// vertical lines
-	for(int i = 0; i < 480; i+=60){
-		for(int j = 20; j < 320; j+=2)
-			drawPixel(i, j, ILI9488_DARKGREY);
-	}
-	for(int j = 20; j < 320; j+=2)
-				drawPixel(479, j, ILI9488_DARKGREY);
-
-	// horizontal lines
-	for(int i = 20; i < 320; i+=60){
-		for(int j = 0; j < 480; j+=2)
-			drawPixel(j, i, ILI9488_DARKGREY);
-	}
-	for(int j = 0; j < 480; j+=2)
-				drawPixel(j, 319, ILI9488_DARKGREY);
-}
-
-void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
-	for(int i = 0; i < 480; ++i){
-			drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, BLACK);
-		if((i%2==0) || (i ==479)){
-			if(((CANVA_MIDDLE_V - x - waveform[i]/40) == 20) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 80) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 140) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 200) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 260) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 319)){
-				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-		if((i%60==0) || (i ==479)){
-			if(((LCD_HEIGHT/2 - x - waveform[i]/40) % 2) == 0){
-				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-	  }
-}
-
-void draw_waveform(oscilloscope_channel* ch){
-	erase_waveform(ch->waveform_display_previous, ch->x_offset);
-
-	for(int i = 0; i < 480; ++i){
-		ch->waveform_display[i] = ch->waveform[i];
-		drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
-		ch->waveform_display_previous[i] = ch->waveform_display[i];
-	}
-
-	// draw marker 0
-	for(int j = 0; j < 5; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, GREEN);
-	}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, GREEN);
-	}
-	for(int j = 0; j < 7; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, GREEN);
-	}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
-	}
-	for(int j = 0; j < 5; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
-	}
-}
 
 
-int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
-	uint32_t max=0, min=4096;
-	for(int i = 0; i < MEMORY_DEPTH; ++i){
-		if(waveform[i]<min)
-			min=waveform[i];
-		if(waveform[i]>max)
-			max=waveform[i];
-	}
-	return max-min;
-}
-
-int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
-    int64_t sum_of_squares = 0;
-    for (int i = 0; i < MEMORY_DEPTH; ++i) {
-        sum_of_squares += (int32_t)waveform[i] * waveform[i];
-    }
-    double mean_of_squares = (double)sum_of_squares / MEMORY_DEPTH;
-    double rms = sqrt(mean_of_squares);
-    return (int)rms;
-}
 /* USER CODE END 0 */
 
 /**
@@ -262,11 +154,10 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_ADC1_Init();
-  MX_TIM4_Init();
-  MX_COMP1_Init();
-  MX_DAC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
+  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, LCD_BRIGHTNESS); // 0-1000
@@ -319,7 +210,6 @@ int main(void)
 	  HAL_Delay(1000);
 	  */
 
-
 	  for(int i = 0; i < 480; ++i){
 	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
 	    }
@@ -336,6 +226,7 @@ int main(void)
 	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
 	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
 	  //HAL_Delay(1);
+
 
 
 /*
