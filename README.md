@@ -1,2 +1,6 @@
-# STM32_oscilloscope
-2 channel oscilloscope with FFT
+# KD 23MTS
+Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
+
+## Authors:
+- Dominik Pluta
+- Kamil Winnicki

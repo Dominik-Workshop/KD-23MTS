@@ -57,6 +57,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
+extern COMP_HandleTypeDef hcomp1;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 extern SPI_HandleTypeDef hspi1;
 /* USER CODE BEGIN EV */
@@ -239,6 +240,20 @@ void DMA2_Channel3_IRQHandler(void)
   /* USER CODE BEGIN DMA2_Channel3_IRQn 1 */
 
   /* USER CODE END DMA2_Channel3_IRQn 1 */
+}
+
+/**
+  * @brief This function handles COMP1 and COMP2 interrupts through EXTI lines 21 and 22.
+  */
+void COMP_IRQHandler(void)
+{
+  /* USER CODE BEGIN COMP_IRQn 0 */
+
+  /* USER CODE END COMP_IRQn 0 */
+  HAL_COMP_IRQHandler(&hcomp1);
+  /* USER CODE BEGIN COMP_IRQn 1 */
+
+  /* USER CODE END COMP_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

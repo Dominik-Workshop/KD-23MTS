@@ -20,6 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "comp.h"
+#include "dac.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -82,7 +84,9 @@
 #define LCD_HEIGHT 320
 #define LCD_BRIGHTNESS 800 // 0-1000
 
-#define MEMORY_DEPTH 512
+#define CANVA_MIDDLE_V 170
+
+#define MEMORY_DEPTH  480//512
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -95,11 +99,23 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
+typedef struct oscilloscope_ch{
+	uint16_t waveform[MEMORY_DEPTH];				// all samples
+
+	int16_t x_offset;								// horizontal offset
+	int16_t y_offset;								// vertical offset (offset = 0 => 0V = middle of the display)
+
+	int16_t y_scale;								// vertical scale [V/div]
+
+	uint16_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed
+	uint16_t waveform_display_previous[LCD_WIDTH];	// section of waveform previously displayed, used to clear old waveform
+
+}oscilloscope_channel;
+
+
 static int conv_done = 0;
-char buf1[20];
-uint8_t* image;
-uint16_t waveform_CH1[MEMORY_DEPTH];
-uint16_t waveform_CH1_prev[MEMORY_DEPTH];
+
+//uint8_t  image [90000];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,6 +129,12 @@ void SystemClock_Config(void);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	SPI1_TX_completed_flag = 1;
+}
+
+oscilloscope_channel_init(oscilloscope_channel* ch){
+	ch->x_offset = 0;
+	ch->y_offset = 0;
+	ch->y_scale = 0;
 }
 
 void drawGrid(){
@@ -135,54 +157,50 @@ void drawGrid(){
 
 void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
 	for(int i = 0; i < 480; ++i){
-			drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, BLACK);
+			drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, BLACK);
 		if((i%2==0) || (i ==479)){
-			if(((LCD_HEIGHT/2 - x - waveform[i]/40) == 20) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 80) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 140) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 200) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 260) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 319)){
-				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
+			if(((CANVA_MIDDLE_V - x - waveform[i]/40) == 20) ||
+			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 80) ||
+			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 140) ||
+			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 200) ||
+			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 260) ||
+			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 319)){
+				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
 			}
 		}
 		if((i%60==0) || (i ==479)){
 			if(((LCD_HEIGHT/2 - x - waveform[i]/40) % 2) == 0){
-				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
+				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
 			}
 		}
 	  }
 }
 
-void draw_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
-	//for(int i = 0; i < 480; ++i){
-		//	drawPixel(i, LCD_HEIGHT/2 - x - waveform_CH1_prev[i]/40, BLACK);
-	//}
-	//drawGrid();
-	erase_waveform(waveform_CH1_prev, x);
-	//drawGrid();
+void draw_waveform(oscilloscope_channel* ch){
+	erase_waveform(ch->waveform_display_previous, ch->x_offset);
+
 	for(int i = 0; i < 480; ++i){
-		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, GREEN);
-		waveform_CH1_prev[i] = waveform_CH1[i];
-	  }
+		ch->waveform_display[i] = ch->waveform[i];
+		drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
+		ch->waveform_display_previous[i] = ch->waveform_display[i];
+	}
 
 	// draw marker 0
 	for(int j = 0; j < 5; ++j){
-			drawPixel(j, LCD_HEIGHT/2 - x - 2, GREEN);
-		}
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, GREEN);
+	}
 	for(int j = 0; j < 6; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x - 1, GREEN);
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, GREEN);
 	}
 	for(int j = 0; j < 7; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x, GREEN);
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, GREEN);
 	}
 	for(int j = 0; j < 6; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x + 1, GREEN);
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
 	}
 	for(int j = 0; j < 5; ++j){
-			drawPixel(j, LCD_HEIGHT/2 - x + 2, GREEN);
-		}
-
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
+	}
 }
 
 
@@ -196,6 +214,16 @@ int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
 	}
 	return max-min;
 }
+
+int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
+    int64_t sum_of_squares = 0;
+    for (int i = 0; i < MEMORY_DEPTH; ++i) {
+        sum_of_squares += (int32_t)waveform[i] * waveform[i];
+    }
+    double mean_of_squares = (double)sum_of_squares / MEMORY_DEPTH;
+    double rms = sqrt(mean_of_squares);
+    return (int)rms;
+}
 /* USER CODE END 0 */
 
 /**
@@ -205,7 +233,10 @@ int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  oscilloscope_channel CH1;
+  oscilloscope_channel_init(&CH1);
 
+  char buf[20];						// buffer for measurements to be displayed
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -231,8 +262,11 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_ADC1_Init();
+  MX_TIM4_Init();
+  MX_COMP1_Init();
+  MX_DAC1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
+  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, LCD_BRIGHTNESS); // 0-1000
@@ -240,36 +274,84 @@ int main(void)
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
+  drawGrid();
+
+  setAddrWindow(463, 1, 463+13-1, 1+18-1);
+  ILI9341_Draw_Colour_Burst(YELLOW, 35 * 18);
+  LCD_Font(466, 15, "2", _Open_Sans_Bold_12  , 1, BLACK);
+
+  HAL_Delay(500);
+
+  setAddrWindow(463, 1, 463+13-1, 1+18-1);
+  ILI9341_Draw_Colour_Burst(GREEN, 35 * 18);
+  LCD_Font(440, 15, "Ch:", _Open_Sans_Bold_12  , 1, WHITE);
+  LCD_Font(466, 15, "1", _Open_Sans_Bold_12  , 1, BLACK);
+
+
 
   //uint16_t touchX = 0, touchY = 0;
-  for(int i = 0; i < 200; ++i){
-	  image[i] = color565(20, 50, 0);
+  /*for(int i = 0; i < 90000; ++i){
+	  image[i] = 0xF;
+	  ++i;
+	  image[i] = 0xA;
   }
-  /*
-  for(int i = 0; i < 480; ++i){
-	waveform_CH1[i] = 40*sin(0.1*i);
-  }*/
-  int offset = -40;
-  drawGrid();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int faza = 0;
   while (1)
   {
+	  /*//test drawing method speed
+	  fillRect(0, 0, 480, 320, RED);
+	  ILI9341_Fill_Screen(ILI9488_BLACK);
+	  for(int i = 0; i < 480; i+=1){
+	  		for(int j = 0; j < 320; j+=1)
+	  			drawPixel(i, j, ILI9488_DARKGREY);
+	  	}
+	  	*/
+	  /*
+	  drawImage(image, 10, 10, 300, 150);
+	  HAL_Delay(1000);
+	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
+	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
+	  HAL_Delay(1000);
+	  */
 
+
+	  for(int i = 0; i < 480; ++i){
+	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	    }
+	  faza++;
+	  draw_waveform(& CH1);
+
+	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
+	  setAddrWindow(39, 1, 39+35-1, 1+18-1);
+	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
+
+	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
+	  setAddrWindow(122, 1, 122+35-1, 1+18-1);
+	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
+	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
+	  //HAL_Delay(1);
+
+
+/*
 	  //ILI9341_Fill_Screen(ILI9488_BLACK);
 	  //drawImage(image, 10, 10, 200, 1);
 	  if(conv_done){
 		  conv_done = 0;
-		  draw_waveform(waveform_CH1, offset);
+		  draw_waveform(& CH1);
 		  //HAL_Delay(500);
-		  sprintf(buf1,"Vpp=%d", calculate_peak_to_peak(waveform_CH1));
+		  sprintf(buf1,"Vpp=%d", calculate_peak_to_peak(CH1.waveform_display));
 		  fillRect(39, 1, 35, 18, RED);
 		  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
-		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform, MEMORY_DEPTH);
 		  //HAL_Delay(1);
 	  }
+
 
 
 

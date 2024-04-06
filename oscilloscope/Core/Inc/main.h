@@ -62,10 +62,10 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define CH1_Pin GPIO_PIN_1
 #define CH1_GPIO_Port GPIOC
+#define CH2_Pin GPIO_PIN_0
+#define CH2_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
-#define TFT_DC_Pin GPIO_PIN_4
-#define TFT_DC_GPIO_Port GPIOC
 #define GEN_OUT_Pin GPIO_PIN_0
 #define GEN_OUT_GPIO_Port GPIOB
 #define TOUCH_CS_Pin GPIO_PIN_12
@@ -76,6 +76,16 @@ void Error_Handler(void);
 #define TFT_LED_GPIO_Port GPIOC
 #define TFT_RST_Pin GPIO_PIN_10
 #define TFT_RST_GPIO_Port GPIOA
+#define Button3_Pin GPIO_PIN_15
+#define Button3_GPIO_Port GPIOA
+#define Button2_Pin GPIO_PIN_10
+#define Button2_GPIO_Port GPIOC
+#define Button1_Pin GPIO_PIN_11
+#define Button1_GPIO_Port GPIOC
+#define ENC_B_Pin GPIO_PIN_6
+#define ENC_B_GPIO_Port GPIOB
+#define ENC_A_Pin GPIO_PIN_7
+#define ENC_A_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
