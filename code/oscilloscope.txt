@@ -1,0 +1,114 @@
+Configuration	oscilloscope
+STM32CubeMX 	6.0.0
+Date	03/26/2024
+MCU	STM32L476RGTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN2 Single-ended	ADC1_IN2	PC1
+ADC1	IN5 Single-ended	ADC1_IN5	PA0
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PB3 (JTDO-TRACESWO)
+SPI2	Full-Duplex Master	SPI2_MISO	PC2
+SPI2	Full-Duplex Master	SPI2_MOSI	PC3
+SPI2	Full-Duplex Master	SPI2_SCK	PB10
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM3	PWM Generation CH3	TIM3_CH3	PB0
+TIM3	PWM Generation CH4	TIM3_CH4	PC9
+TIM4	Encoder Mode	TIM4_CH1	PB6
+TIM4	Encoder Mode	TIM4_CH2	PB7
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC13	GPIO_EXTI13	B1 [Blue PushButton]
+9	PC1	ADC1_IN2	CH1
+10	PC2	SPI2_MISO	
+11	PC3	SPI2_MOSI	
+14	PA0	ADC1_IN5	CH2
+21	PA5	GPIO_Output	LD2 [green Led]
+22	PA6	SPI1_MISO	
+23	PA7	SPI1_MOSI	
+24	PC4	GPIO_Output	TFT_DC
+26	PB0	TIM3_CH3	GEN_OUT
+29	PB10	SPI2_SCK	
+33	PB12	GPIO_Output	TOUCH_CS
+39	PC8	GPIO_Output	TFT_CS
+40	PC9	TIM3_CH4	TFT_LED
+43	PA10	GPIO_Output	TFT_RST
+49	PA14 (JTCK-SWCLK)	GPIO_Input	ENC_button
+50	PA15 (JTDI)	GPIO_Input	Button3
+51	PC10	GPIO_Input	Button2
+52	PC11	GPIO_Input	Button1
+55	PB3 (JTDO-TRACESWO)	SPI1_SCK	
+58	PB6	TIM4_CH1	ENC_B
+59	PB7	TIM4_CH2	ENC_A
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC1	IN2 Single-ended	ADC1_IN2	PC1
+ADC1	IN5 Single-ended	ADC1_IN5	PA0
+SPI1	Full-Duplex Master	SPI1_MISO	PA6
+SPI1	Full-Duplex Master	SPI1_MOSI	PA7
+SPI1	Full-Duplex Master	SPI1_SCK	PB3 (JTDO-TRACESWO)
+SPI2	Full-Duplex Master	SPI2_MISO	PC2
+SPI2	Full-Duplex Master	SPI2_MOSI	PC3
+SPI2	Full-Duplex Master	SPI2_SCK	PB10
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM3	PWM Generation CH3	TIM3_CH3	PB0
+TIM3	PWM Generation CH4	TIM3_CH4	PC9
+TIM4	Encoder Mode	TIM4_CH1	PB6
+TIM4	Encoder Mode	TIM4_CH2	PB7
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC13	GPIO_EXTI13	B1 [Blue PushButton]
+9	PC1	ADC1_IN2	CH1
+10	PC2	SPI2_MISO	
+11	PC3	SPI2_MOSI	
+14	PA0	ADC1_IN5	CH2
+21	PA5	GPIO_Output	LD2 [green Led]
+22	PA6	SPI1_MISO	
+23	PA7	SPI1_MOSI	
+24	PC4	GPIO_Output	TFT_DC
+26	PB0	TIM3_CH3	GEN_OUT
+29	PB10	SPI2_SCK	
+33	PB12	GPIO_Output	TOUCH_CS
+39	PC8	GPIO_Output	TFT_CS
+40	PC9	TIM3_CH4	TFT_LED
+43	PA10	GPIO_Output	TFT_RST
+49	PA14 (JTCK-SWCLK)	GPIO_Input	ENC_button
+50	PA15 (JTDI)	GPIO_Input	Button3
+51	PC10	GPIO_Input	Button2
+52	PC11	GPIO_Input	Button1
+55	PB3 (JTDO-TRACESWO)	SPI1_SCK	
+58	PB6	TIM4_CH1	ENC_B
+59	PB7	TIM4_CH2	ENC_A
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : oscilloscope
+Project Folder : E:\PWR\Semestr6\Sterowniki_robotow\STM32_oscilloscope\oscilloscope
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_L4 V1.16.0
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : No
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+

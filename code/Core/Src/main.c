@@ -30,7 +30,7 @@
 #include "ili9488.h"
 #include "xpt2046.h"
 #include "stdio.h"
-
+#include "oscilloscope.h"
 #include "008_Open_Sans_Bold.h"
 #include "009_Open_Sans_Bold.h"
 #include "010_Open_Sans_Bold.h"
@@ -49,15 +49,7 @@
 #include "096_Open_Sans_Bold.h"
 #include "112_Open_Sans_Bold.h"
 #include "128_Open_Sans_Bold.h"
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
 #define _Open_Sans_Bold_8      &Open_Sans_Bold_8
 #define _Open_Sans_Bold_9      &Open_Sans_Bold_9
 #define _Open_Sans_Bold_10     &Open_Sans_Bold_10
@@ -78,11 +70,17 @@
 #define _Open_Sans_Bold_112      &Open_Sans_Bold_112
 #define _Open_Sans_Bold_128      &Open_Sans_Bold_128
 
-#define LCD_WIDTH 480
-#define LCD_HEIGHT 320
-#define LCD_BRIGHTNESS 800 // 0-1000
+/* USER CODE END Includes */
 
-#define MEMORY_DEPTH 512
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -95,11 +93,12 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
+
+
+
 static int conv_done = 0;
-char buf1[20];
-uint8_t* image;
-uint16_t waveform_CH1[MEMORY_DEPTH];
-uint16_t waveform_CH1_prev[MEMORY_DEPTH];
+
+//uint8_t  image [90000];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -115,87 +114,8 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 	SPI1_TX_completed_flag = 1;
 }
 
-void drawGrid(){
-	// vertical lines
-	for(int i = 0; i < 480; i+=60){
-		for(int j = 20; j < 320; j+=2)
-			drawPixel(i, j, ILI9488_DARKGREY);
-	}
-	for(int j = 20; j < 320; j+=2)
-				drawPixel(479, j, ILI9488_DARKGREY);
-
-	// horizontal lines
-	for(int i = 20; i < 320; i+=60){
-		for(int j = 0; j < 480; j+=2)
-			drawPixel(j, i, ILI9488_DARKGREY);
-	}
-	for(int j = 0; j < 480; j+=2)
-				drawPixel(j, 319, ILI9488_DARKGREY);
-}
-
-void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
-	for(int i = 0; i < 480; ++i){
-			drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, BLACK);
-		if((i%2==0) || (i ==479)){
-			if(((LCD_HEIGHT/2 - x - waveform[i]/40) == 20) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 80) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 140) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 200) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 260) ||
-			   ((LCD_HEIGHT/2 - x - waveform[i]/40) == 319)){
-				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-		if((i%60==0) || (i ==479)){
-			if(((LCD_HEIGHT/2 - x - waveform[i]/40) % 2) == 0){
-				drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-	  }
-}
-
-void draw_waveform(uint16_t waveform[MEMORY_DEPTH], uint x){
-	//for(int i = 0; i < 480; ++i){
-		//	drawPixel(i, LCD_HEIGHT/2 - x - waveform_CH1_prev[i]/40, BLACK);
-	//}
-	//drawGrid();
-	erase_waveform(waveform_CH1_prev, x);
-	//drawGrid();
-	for(int i = 0; i < 480; ++i){
-		drawPixel(i, LCD_HEIGHT/2 - x - waveform[i]/40, GREEN);
-		waveform_CH1_prev[i] = waveform_CH1[i];
-	  }
-
-	// draw marker 0
-	for(int j = 0; j < 5; ++j){
-			drawPixel(j, LCD_HEIGHT/2 - x - 2, GREEN);
-		}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x - 1, GREEN);
-	}
-	for(int j = 0; j < 7; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x, GREEN);
-	}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, LCD_HEIGHT/2 - x + 1, GREEN);
-	}
-	for(int j = 0; j < 5; ++j){
-			drawPixel(j, LCD_HEIGHT/2 - x + 2, GREEN);
-		}
-
-}
 
 
-int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
-	uint32_t max=0, min=4096;
-	for(int i = 0; i < MEMORY_DEPTH; ++i){
-		if(waveform[i]<min)
-			min=waveform[i];
-		if(waveform[i]>max)
-			max=waveform[i];
-	}
-	return max-min;
-}
 /* USER CODE END 0 */
 
 /**
@@ -205,7 +125,10 @@ int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+  oscilloscope_channel CH1;
+  oscilloscope_channel_init(&CH1);
 
+  char buf[20];						// buffer for measurements to be displayed
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -231,8 +154,10 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM3_Init();
   MX_ADC1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
+  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
+  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
   __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, LCD_BRIGHTNESS); // 0-1000
@@ -240,36 +165,84 @@ int main(void)
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
+  drawGrid();
+
+  setAddrWindow(463, 1, 463+13-1, 1+18-1);
+  ILI9341_Draw_Colour_Burst(YELLOW, 35 * 18);
+  LCD_Font(466, 15, "2", _Open_Sans_Bold_12  , 1, BLACK);
+
+  HAL_Delay(500);
+
+  setAddrWindow(463, 1, 463+13-1, 1+18-1);
+  ILI9341_Draw_Colour_Burst(GREEN, 35 * 18);
+  LCD_Font(440, 15, "Ch:", _Open_Sans_Bold_12  , 1, WHITE);
+  LCD_Font(466, 15, "1", _Open_Sans_Bold_12  , 1, BLACK);
+
+
 
   //uint16_t touchX = 0, touchY = 0;
-  for(int i = 0; i < 200; ++i){
-	  image[i] = color565(20, 50, 0);
+  /*for(int i = 0; i < 90000; ++i){
+	  image[i] = 0xF;
+	  ++i;
+	  image[i] = 0xA;
   }
-  /*
-  for(int i = 0; i < 480; ++i){
-	waveform_CH1[i] = 40*sin(0.1*i);
-  }*/
-  int offset = -40;
-  drawGrid();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  int faza = 0;
   while (1)
   {
+	  /*//test drawing method speed
+	  fillRect(0, 0, 480, 320, RED);
+	  ILI9341_Fill_Screen(ILI9488_BLACK);
+	  for(int i = 0; i < 480; i+=1){
+	  		for(int j = 0; j < 320; j+=1)
+	  			drawPixel(i, j, ILI9488_DARKGREY);
+	  	}
+	  	*/
+	  /*
+	  drawImage(image, 10, 10, 300, 150);
+	  HAL_Delay(1000);
+	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
+	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
+	  HAL_Delay(1000);
+	  */
 
+	  for(int i = 0; i < 480; ++i){
+	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	    }
+	  faza++;
+	  draw_waveform(& CH1);
+
+	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
+	  setAddrWindow(39, 1, 39+35-1, 1+18-1);
+	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
+
+	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
+	  setAddrWindow(122, 1, 122+35-1, 1+18-1);
+	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
+	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
+	  //HAL_Delay(1);
+
+
+
+/*
 	  //ILI9341_Fill_Screen(ILI9488_BLACK);
 	  //drawImage(image, 10, 10, 200, 1);
 	  if(conv_done){
 		  conv_done = 0;
-		  draw_waveform(waveform_CH1, offset);
+		  draw_waveform(& CH1);
 		  //HAL_Delay(500);
-		  sprintf(buf1,"Vpp=%d", calculate_peak_to_peak(waveform_CH1));
+		  sprintf(buf1,"Vpp=%d", calculate_peak_to_peak(CH1.waveform_display));
 		  fillRect(39, 1, 35, 18, RED);
 		  LCD_Font(5, 15, buf1, _Open_Sans_Bold_12  , 1, WHITE);
-		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) waveform_CH1, MEMORY_DEPTH);
+		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform, MEMORY_DEPTH);
 		  //HAL_Delay(1);
 	  }
+
 
 
 
