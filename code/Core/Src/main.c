@@ -224,6 +224,8 @@ int main(void)
 	  	    }
 
 	  draw_waveform(& CH1);
+	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, 15);
 	  imageRender();
 	  //HAL_Delay(1000);
 	  /*for(int i = 0; i < 280; ++i){

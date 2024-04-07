@@ -355,31 +355,13 @@ void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 	if ((y + h - 1) >= _height)
 		h = _height - y;
 
-	setAddrWindow(x, y, x + w - 1, y + h - 1);
 
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-
-	for (y = h; y > 0; y--) {
-		for (x = w; x > 0; x--) {
-
-			write16BitColor(color);
+	for(int16_t i = 0; i < w; ++i){
+		for(int16_t j = 0; j < h; ++j){
+			IMG_BUF_SET(x+i, y+j, color);
 		}
 	}
 
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-
-//		for (y = h; y > 0; y--) {
-//			for (x = w; x > 0; x--) {
-//
-//				write16BitColor(ILI9488_DARKGREY);
-//			}
-//		}
-
-//		HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 
 }
 void setRotation(uint8_t r)
