@@ -180,29 +180,9 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
-  //drawLine(10, 10, 300, 300, RED);
-
   while (1)
   {
-	  //test drawing method speed
-	  //fillRect(0, 0, 480, 320, RED);
-	  //ILI9341_Fill_Screen(ILI9488_BLACK);
 
-	  /*for(int i = 0; i < 480; i+=60){
-	  		for(int j = 20; j < 320; j+=2)
-	  			drawPixel(i, j, ILI9488_DARKGREY);
-	  	}
-	  	for(int j = 20; j < 320; j+=2)
-	  				drawPixel(479, j, ILI9488_DARKGREY);
-
-	  	// horizontal lines
-	  	for(int i = 20; i < 320; i+=60){
-	  		for(int j = 0; j < 480; j+=2)
-	  			drawPixel(j, i, ILI9488_DARKGREY);
-	  	}
-	  	for(int j = 0; j < 480; j+=2)
-	  				drawPixel(j, 319, ILI9488_DARKGREY);
-	  	//HAL_Delay(1000);
 
 	  /*
 	  drawImage(image, 10, 10, 300, 150);
@@ -225,7 +205,7 @@ int main(void)
 
 	  draw_waveform(& CH1);
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, 15);
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
 	  imageRender();
 	  //HAL_Delay(1000);
 	  /*for(int i = 0; i < 280; ++i){
@@ -265,21 +245,8 @@ int main(void)
 		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform, MEMORY_DEPTH);
 		  //HAL_Delay(1);
 	  }
-
-
-
-
-	  //CODE FOR DMA
-	  /*
-	  ILI9341_Fill_Screen(ILI9488_GREEN);
-	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
-	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  ILI9341_Fill_Screen(ILI9488_BLUE);
-	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
-	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);
-	  HAL_Delay(1000);
-
 	  */
+
 	  //    CODE FOR TOUCH
 	  /*
 	  //char buf[20];

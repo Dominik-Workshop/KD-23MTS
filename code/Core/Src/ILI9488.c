@@ -10,11 +10,9 @@
 #include <stdbool.h>
 #include <string.h>
 #include "lcd.h"
+
 extern SPI_HandleTypeDef hspi1;
-
 extern DMA_HandleTypeDef hdma_spi1_tx;
-
-
 extern uint8_t SPI1_TX_completed_flag;
 
 static uint8_t image_buffer[76800] = {0};
@@ -22,13 +20,37 @@ static uint8_t image_buffer[76800] = {0};
 #define IMG_BUF_SET(x, y, c) 	if(((x)%2)==0){image_buffer[((y)*240)+((x)/2)]&=0x0F;image_buffer[((y)*240)+((x)/2)]|=((c)<<4);}else{image_buffer[((y)*240)+((x)/2)]&=0xF0;image_buffer[((y)*240)+((x)/2)]|=(c);}
 
 
+static uint8_t colors[16][3] = {
+  // r, g, b //
+	{0, 0, 0},			// black
+	{0x55, 0x55, 0x55},	// grey
+	{0xFF, 0xFF, 0xFF}, // white
 
-uint8_t  tabcolor;
+	{0, 0x55, 0},		// dark green
+	{0, 0xAA, 0},		// green
+	{0, 0xFF, 0},		// light green
+
+	{0, 0, 0xFF},		// dark blue
+	{0, 0x55, 0xFF},	// blue
+	{0, 0xAA, 0xFF},	// light blue
+	{0, 0xFF, 0xFF},	// cyan
+
+	{0xFF, 0, 0},		// red
+	{0xFF, 0x55, 0},	// light red
+	{0xFF, 0xAA, 0},	// orange
+	{0xFF, 0xFF, 0},	// yellow
+
+	{0xFF, 0, 0xFF},	// dark pink
+	{0xFF, 0x55, 0xFF}	// pink
+};
+
+
+uint8_t tabcolor;
 uint8_t mySPCR;
 
 int16_t WIDTH;
 int16_t HEIGHT;
- int16_t _width;
+int16_t _width;
 int16_t  _height;
 int16_t cursor_x;
 int16_t cursor_y;
@@ -36,11 +58,10 @@ uint16_t textcolor;
 uint16_t textbgcolor;
 uint8_t textsize_x;
 uint8_t textsize_y;
- uint8_t rotation;
+uint8_t rotation;
 
 
-void ILI9488_Init(void)
-{
+void ILI9488_Init(void){
 	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_RESET);
 	HAL_Delay(10);
 	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_SET);
@@ -127,12 +148,9 @@ void ILI9488_Init(void)
 	HAL_Delay(120);
 
 	writecommand(ILI9488_DISPON);    //Display on
-
-
 }
 
-void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
-{
+void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
 	writecommand(ILI9488_CASET); // Column addr set
 	writedata(x0 >> 8);
 	writedata(x0 & 0xFF);     // XSTART
@@ -147,8 +165,8 @@ void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 }
-void setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea)
-{
+
+void setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea){
 	writecommand(0x33); // Vertical scroll definition
 	writedata(topFixedArea >> 8);
 	writedata(topFixedArea);
@@ -157,21 +175,21 @@ void setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea)
 	writedata(bottomFixedArea >> 8);
 	writedata(bottomFixedArea);
 }
-void scroll(uint16_t pixels)
-{
+
+void scroll(uint16_t pixels){
 	writecommand(0x37); // Vertical scrolling start address
 	writedata(pixels >> 8);
 	writedata(pixels);
 }
-void pushColor(uint16_t color)
-{
+
+void pushColor(uint16_t color){
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 	write16BitColor(color);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
-void pushColors(uint16_t *data, uint8_t len, uint8_t first)
-{
+
+void pushColors(uint16_t *data, uint8_t len, uint8_t first){
 	uint16_t color;
 	uint8_t buff[len * 3 + 1];
 	uint16_t count = 0;
@@ -194,12 +212,11 @@ void pushColors(uint16_t *data, uint8_t len, uint8_t first)
 	}
 	HAL_SPI_Transmit(&hspi1, buff, len * 3, 100);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
-
 }
-void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
-{
 
-		if ((x >= _width) || (y >= _height))
+void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+
+	if ((x >= _width) || (y >= _height))
 		return;
 	if ((x + w - 1) >= _width)
 		w = _width - x;
@@ -228,15 +245,12 @@ void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t 
 			linebuff[pixcount] = ((color & 0x001F) * 255) / 31;
 			pixcount++;
 		}
-//		HAL_SPI_Transmit(_spi->getHandler(), linebuff, w * 3, 100);
 		HAL_SPI_Transmit(&hspi1, linebuff, w * 3, 100);
-
 	}
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
-void fillScreen(uint16_t color)
-{
+
+void fillScreen(uint16_t color){
 	fillRect(0, 0,  _width, _height, color);
 }
 
@@ -244,39 +258,24 @@ void clearScreen(){
 	memset(image_buffer, 0, sizeof(image_buffer));
 }
 
-void drawPixel(int16_t x, int16_t y, uint16_t color)
-{
+void drawPixel(int16_t x, int16_t y, uint16_t color){
 	if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height))
 		return;
 	IMG_BUF_SET(x, y, color);
-
 }
-void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
-{
 
+void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){
 	if ((x >= _width) || (y >= _height))
 		return;
-
 	if ((y + h - 1) >= _height)
 		h = _height - y;
 
 	for(uint16_t i = 0; i < h; ++i){
 		IMG_BUF_SET(x, y+i, color);
 	}
-
-	//setAddrWindow(x, y, x, y + h - 1);
-	//HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	//HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-
-	//while (h--) {
-	//	write16BitColor(color);
-	//}
-	//HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
-
 }
-void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
-{
 
+void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
 	if ((x >= _width) || (y >= _height))
 		return;
 	if ((x + w - 1) >= _width)
@@ -285,11 +284,9 @@ void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
 	for(uint16_t i = 0; i < w; ++i){
 			IMG_BUF_SET(x+i, y, color);
 		}
-
-
 }
-void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color)
-{
+
+void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color){
 	 if (x0 == x1) {
 	    if (y0 > y1)
 	      _swap_int16_t(y0, y1);
@@ -301,12 +298,10 @@ void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color)
 	  } else {
 
 	    writeLine(x0, y0, x1, y1, color);
-
 	  }
-
 }
-void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color) {
 
+void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color){
   int16_t steep = abs(y1 - y0) > abs(x1 - x0);
   if (steep) {
     _swap_int16_t(x0, y0);
@@ -346,8 +341,8 @@ void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color) {
     }
   }
 }
-void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
+
+void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
 	if ((x >= _width) || (y >= _height))
 		return;
 	if ((x + w - 1) >= _width)
@@ -361,12 +356,9 @@ void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 			IMG_BUF_SET(x+i, y+j, color);
 		}
 	}
-
-
 }
-void setRotation(uint8_t r)
-{
 
+void setRotation(uint8_t r){
 	writecommand(ILI9488_MADCTL);
 	rotation = r % 4; // can't be higher than 3
 	switch (rotation) {
@@ -391,39 +383,28 @@ void setRotation(uint8_t r)
 		_height = ILI9488_TFTWIDTH;
 		break;
 	}
-
 }
-void invertDisplay(uint8_t i)
-{
 
+void invertDisplay(uint8_t i){
 	  writecommand(i ? ILI9488_INVON : ILI9488_INVOFF);
-
 }
-uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
-{
+
+uint16_t color565(uint8_t r, uint8_t g, uint8_t b){
 	return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
-void spiwrite(uint8_t data)
-{
+
+void spiwrite(uint8_t data){
 	HAL_SPI_Transmit(&hspi1, &data, 1, 1);
-
 }
-void writecommand(uint8_t c)
-{
 
+void writecommand(uint8_t c){
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_RESET);
-
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-
 	HAL_SPI_Transmit(&hspi1, &c, 1, 1);
-
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
-
 }
-void write16BitColor(uint16_t color)
-{
+
+void write16BitColor(uint16_t color){
 
 	  uint8_t r = (color & 0xF800) >> 11;
 	  uint8_t g = (color & 0x07E0) >> 5;
@@ -433,28 +414,21 @@ void write16BitColor(uint16_t color)
 	  g = (g * 255) / 63;
 	  b = (b * 255) / 31;
 
-
 	  HAL_SPI_Transmit(&hspi1, &r, 1, 1);
 	  HAL_SPI_Transmit(&hspi1, &g, 1, 1);
 	  HAL_SPI_Transmit(&hspi1, &b, 1, 1);
-
-
 }
-void writedata(uint8_t d)
-{
 
-
+void writedata(uint8_t d){
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 
 	HAL_SPI_Transmit(&hspi1, &d, 1, 1);
 	//HAL_SPI_Transmit(_spi.getHandler(), &tmp,1,100);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
-
 }
-void testLines(uint8_t color)
-{
 
+void testLines(uint8_t color){
 	//unsigned long start, t;
 	int x1, y1, x2, y2, w = _width, h = _height;
 	fillScreen(ILI9488_BLACK);
@@ -503,8 +477,8 @@ void testLines(uint8_t color)
 	for (y2 = 0; y2 < h; y2 += 6)
 		drawLine(x1, y1, x2, y2, color);
 }
-void sendasIO(uint8_t d)
-{
+
+void sendasIO(uint8_t d){
 	for (uint8_t bit = 0x80; bit; bit >>= 1) {
 
 		if (d & bit) {
@@ -523,6 +497,7 @@ void sendasIO(uint8_t d)
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 	}
 }
+
 /*void ILI9488::commandList(uint8_t *addr)
  {
 	uint8_t numCommands, numArgs;
@@ -549,8 +524,7 @@ void sendasIO(uint8_t d)
 }*/
 
 
-void ILI9341_Draw_Colour(uint16_t Colour)
-{
+void ILI9341_Draw_Colour(uint16_t Colour){
 //SENDS COLOUR
 
 
@@ -581,16 +555,13 @@ void ILI9341_Draw_Colour(uint16_t Colour)
 
 //INTERNAL FUNCTION OF LIBRARY
 /*Sends block colour information to LCD*/
-void ILI9341_Draw_Colour_Burst(uint16_t Colour, uint32_t Size)
-{
+void ILI9341_Draw_Colour_Burst(uint16_t Colour, uint32_t Size){
 //SENDS COLOUR
 	uint32_t Buffer_Size = 0;
-	if ((Size * 2) < BURST_MAX_SIZE)
-	{
+	if ((Size * 2) < BURST_MAX_SIZE){
 		Buffer_Size = Size;
 	}
-	else
-	{
+	else{
 		Buffer_Size = BURST_MAX_SIZE;
 	}
 
@@ -608,8 +579,7 @@ void ILI9341_Draw_Colour_Burst(uint16_t Colour, uint32_t Size)
 	  b = (b * 255) / 31;
 
 	unsigned char burst_buffer[Buffer_Size];
-	for (uint32_t j = 0; j < Buffer_Size; j += 3)
-	{
+	for (uint32_t j = 0; j < Buffer_Size; j += 3){
 		burst_buffer[j] = r;
 		burst_buffer[j + 1] = g;
 		burst_buffer[j + 2] = b;
@@ -619,10 +589,8 @@ void ILI9341_Draw_Colour_Burst(uint16_t Colour, uint32_t Size)
 	uint32_t Sending_in_Block = Sending_Size / Buffer_Size;
 	uint32_t Remainder_from_block = Sending_Size % Buffer_Size;
 
-	if (Sending_in_Block != 0)
-	{
-		for (uint32_t j = 0; j < (Sending_in_Block); j++)
-		{
+	if (Sending_in_Block != 0){
+		for (uint32_t j = 0; j < (Sending_in_Block); j++){
 			SPI1_TX_completed_flag = 0;
 			HAL_SPI_Transmit_DMA(&hspi1, (unsigned char*) burst_buffer, Buffer_Size);
 			while (SPI1_TX_completed_flag == 0);
@@ -642,16 +610,13 @@ void ILI9341_Draw_Colour_Burst(uint16_t Colour, uint32_t Size)
 
 //FILL THE ENTIRE SCREEN WITH SELECTED COLOUR (either #define-d ones or custom 16bit)
 /*Sets address (entire screen) and Sends Height*Width ammount of colour information to LCD*/
-void ILI9341_Fill_Screen(uint16_t Colour)
-{
+void ILI9341_Fill_Screen(uint16_t Colour){
 //	LCD_Address_Set(xsta,ysta+OFFSET_Y,xend-1,yend-1+OFFSET_Y);/
 	setAddrWindow(0, 0, ILI9488_TFTHEIGHT-1, ILI9488_TFTWIDTH-1);
 	ILI9341_Draw_Colour_Burst(Colour, ILI9488_TFTWIDTH * ILI9488_TFTHEIGHT);
 }
 
-
-void ILI9341_Fill_Screen1(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_t Colour)
-{
+void ILI9341_Fill_Screen1(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_t Colour){
 //	LCD_Address_Set(xsta,ysta+OFFSET_Y,xend-1,yend-1+OFFSET_Y);/
 	setAddrWindow(x, y, h-1, w-1);
 	ILI9341_Draw_Colour_Burst(Colour, w * h);
@@ -753,55 +718,44 @@ void ILI9341_Fill_Screen1(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_
 //
 
 
-
-void LCD_Char(int16_t x, int16_t y, const GFXglyph *glyph, const GFXfont *font, uint8_t size, uint32_t color24)
-{
+void LCD_Char(int16_t x, int16_t y, const GFXglyph *glyph, const GFXfont *font, uint8_t size, uint32_t color24){
 	uint8_t  *bitmap = font -> bitmap;
 	uint16_t bo = glyph -> bitmapOffset;
 	uint8_t bits = 0, bit = 0;
 	uint16_t set_pixels = 0;
 	uint8_t  cur_x, cur_y;
-	for (cur_y = 0; cur_y < glyph -> height; cur_y++)
-	{
-		for (cur_x = 0; cur_x < glyph -> width; cur_x++)
-		{
-			if (bit == 0)
-			{
+	for (cur_y = 0; cur_y < glyph -> height; cur_y++){
+		for (cur_x = 0; cur_x < glyph -> width; cur_x++){
+			if (bit == 0){
 				bits = (*(const unsigned char *)(&bitmap[bo++]));
 				bit  = 0x80;
 			}
 			if (bits & bit) set_pixels++;
-			else if (set_pixels > 0)
-			{
+			else if (set_pixels > 0){
 				fillRect(x + (glyph -> xOffset + cur_x - set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
 				set_pixels = 0;
 			}
 			bit >>= 1;
 		}
-		if (set_pixels > 0)
-		{
+		if (set_pixels > 0){
 			fillRect(x + (glyph -> xOffset + cur_x-set_pixels) * size, y + (glyph -> yOffset + cur_y) * size, size * set_pixels, size, color24);
 			set_pixels = 0;
 		}
 	}
 }
 
-void LCD_Font(uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, uint8_t size, uint32_t color24)
-{
+void LCD_Font(uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, uint8_t size, uint32_t color24){
 	int16_t cursor_x = x;
 	int16_t cursor_y = y;
 	GFXfont font;
 	memcpy(&font, p_font, sizeof(GFXfont));
-	for (uint16_t text_pos = 0; text_pos < strlen(text); text_pos++)
-	{
+	for (uint16_t text_pos = 0; text_pos < strlen(text); text_pos++){
 		char c = text[text_pos];
-		if (c == '\n')
-		{
+		if (c == '\n'){
 			cursor_x = x;
 			cursor_y += font.yAdvance * size;
 		}
-		else if (c >= font.first && c <= font.last && c != '\r')
-		{
+		else if (c >= font.first && c <= font.last && c != '\r'){
 			GFXglyph glyph;
 			memcpy(&glyph, &font.glyph[c - font.first], sizeof(GFXglyph));
 			LCD_Char(cursor_x, cursor_y, &glyph, &font, size, color24);
@@ -853,38 +807,14 @@ void drawCanva(){
 			linebuff[pixcount] = ((color & 0x001F) * 255) / 31;
 			pixcount++;
 		}
-//		HAL_SPI_Transmit(_spi->getHandler(), linebuff, w * 3, 100);
 		HAL_SPI_Transmit(&hspi1, linebuff, w * 3, 100);
 
 	}
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
 
-static uint8_t colors[16][3] = {
-	{0, 0, 0},
-	{0x55, 0x55, 0x55},	//gray
-	{0, 0x55, 0},
-	{0, 0xAA, 0},
-	{0, 0xFF, 0},
-
-	{0, 0, 0xFF},
-	{0, 0x55, 0xFF},
-	{0, 0xAA, 0xFF},
-	{0, 0xFF, 0xFF},
-
-	{0xFF, 0, 0},
-	{0xFF, 0x55, 0},
-	{0xFF, 0xAA, 0},
-	{0xFF, 0xFF, 0},
-
-	{0xFF, 0, 0xFF},
-	{0xFF, 0x55, 0xFF},
-	{0xFF, 0xFF, 0xFF}
-};
 
 void imageRender(){
-
 	setAddrWindow(0, 0, LCD_WIDTH - 1, LCD_HEIGHT - 1);
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
@@ -892,19 +822,6 @@ void imageRender(){
 	uint8_t linebuff[LCD_WIDTH * 3 + 1];
 	for (uint16_t i = 0; i < LCD_HEIGHT; i++) {
 		for (uint16_t j = 0; j < LCD_WIDTH/2; j++) {
-			/*uint8_t b1 = img[count];
-			count++;
-			uint8_t b2 = img[count];
-			count++;
-			uint16_t color = b1 << 8 | b2;
-			linebuff[pixcount] = (((color & 0xF800) >> 11) * 255)
-				/ 31;
-			pixcount++;
-			linebuff[pixcount] = (((color & 0x07E0) >> 5) * 255)
-					/ 63;
-			pixcount++;
-			linebuff[pixcount] = ((color & 0x001F) * 255) / 31;
-			pixcount++;*/
 			uint8_t c1 = IMG_BUFF_GET(2*j, i);
 			uint8_t c2 = IMG_BUFF_GET(2*j + 1, i);
 			linebuff[2*3*j + 0 + 0] = colors[c1][0];
@@ -914,10 +831,7 @@ void imageRender(){
 			linebuff[2*3*j + 3 + 1] = colors[c2][1];
 			linebuff[2*3*j + 3 + 2] = colors[c2][2];
 		}
-//		HAL_SPI_Transmit(_spi->getHandler(), linebuff, w * 3, 100);
 		HAL_SPI_Transmit(&hspi1, linebuff, LCD_WIDTH * 3, 100);
-
 	}
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
