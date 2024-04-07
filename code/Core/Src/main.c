@@ -94,11 +94,8 @@
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
 
-
-
 static int conv_done = 0;
 
-//uint8_t  image [90000];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,7 +110,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	SPI1_TX_completed_flag = 1;
 }
-
 
 
 /* USER CODE END 0 */
@@ -156,6 +152,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
   //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
@@ -165,7 +162,7 @@ int main(void)
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
-  drawGrid();
+  //drawGrid();
 
   setAddrWindow(463, 1, 463+13-1, 1+18-1);
   ILI9341_Draw_Colour_Burst(YELLOW, 35 * 18);
@@ -178,41 +175,57 @@ int main(void)
   LCD_Font(440, 15, "Ch:", _Open_Sans_Bold_12  , 1, WHITE);
   LCD_Font(466, 15, "1", _Open_Sans_Bold_12  , 1, BLACK);
 
-
-
-  //uint16_t touchX = 0, touchY = 0;
-  /*for(int i = 0; i < 90000; ++i){
-	  image[i] = 0xF;
-	  ++i;
-	  image[i] = 0xA;
-  }
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
+  //drawLine(10, 10, 300, 300, RED);
+  HAL_Delay(1000);
+
   while (1)
   {
-	  /*//test drawing method speed
-	  fillRect(0, 0, 480, 320, RED);
-	  ILI9341_Fill_Screen(ILI9488_BLACK);
-	  for(int i = 0; i < 480; i+=1){
-	  		for(int j = 0; j < 320; j+=1)
+	  //test drawing method speed
+	  //fillRect(0, 0, 480, 320, RED);
+	  //ILI9341_Fill_Screen(ILI9488_BLACK);
+
+	  /*for(int i = 0; i < 480; i+=60){
+	  		for(int j = 20; j < 320; j+=2)
 	  			drawPixel(i, j, ILI9488_DARKGREY);
 	  	}
-	  	*/
+	  	for(int j = 20; j < 320; j+=2)
+	  				drawPixel(479, j, ILI9488_DARKGREY);
+
+	  	// horizontal lines
+	  	for(int i = 20; i < 320; i+=60){
+	  		for(int j = 0; j < 480; j+=2)
+	  			drawPixel(j, i, ILI9488_DARKGREY);
+	  	}
+	  	for(int j = 0; j < 480; j+=2)
+	  				drawPixel(j, 319, ILI9488_DARKGREY);
+	  	//HAL_Delay(1000);
+
 	  /*
 	  drawImage(image, 10, 10, 300, 150);
 	  HAL_Delay(1000);
 	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
 	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
-	  HAL_Delay(1000);
-	  */
+	  HAL_Delay(1000);*/
+	  drawCanva();
+
+	  //HAL_Delay(1000);
 
 	  for(int i = 0; i < 480; ++i){
-	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	  	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	  	    }
+	  /*for(int i = 0; i < 280; ++i){
+	  	//CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	  	CH1.waveform[i] = 0;
 	    }
+	  for(int i = 280; i < 480; ++i){
+	  	  	//CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	  	  	CH1.waveform[i] = 2000 + 2000;
+	  	    }*/
 	  faza++;
 	  draw_waveform(& CH1);
 

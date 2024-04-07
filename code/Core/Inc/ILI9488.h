@@ -194,5 +194,6 @@ void ILI9488_Init(void);
 		void ILI9341_Draw_Colour(uint16_t Colour);
 		void ILI9341_Fill_Screen1(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_t Colour);
 		void LCD_Font(uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, uint8_t size, uint32_t color24);
+		void drawCanva();
 
 #endif /* ILI9488_H_ */

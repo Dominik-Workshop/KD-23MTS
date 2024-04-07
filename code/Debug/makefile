@@ -46,8 +46,8 @@ oscilloscope.bin \
 all: oscilloscope.elf secondary-outputs
 
 # Tool invocations
-oscilloscope.elf: $(OBJS) $(USER_OBJS) E:\PWR\Semestr6\Sterowniki_robotow\STM32_oscilloscope\oscilloscope\STM32L476RGTX_FLASH.ld
-	arm-none-eabi-gcc -o "oscilloscope.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\PWR\Semestr6\Sterowniki_robotow\STM32_oscilloscope\oscilloscope\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="oscilloscope.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+oscilloscope.elf: $(OBJS) $(USER_OBJS) E:\PWR\Semestr6\Sterowniki_robotow\STM32_oscilloscope\code\STM32L476RGTX_FLASH.ld
+	arm-none-eabi-gcc -o "oscilloscope.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"E:\PWR\Semestr6\Sterowniki_robotow\STM32_oscilloscope\code\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="oscilloscope.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -57,9 +57,8 @@ void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint32_t x){
 }
 
 void draw_waveform(oscilloscope_channel* ch){
-	erase_waveform(ch->waveform_display_previous, ch->x_offset);
 
-
+/*
 	// erase marker 0
 	for(int j = 0; j < 5; ++j){
 		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, BLACK);
@@ -76,12 +75,21 @@ void draw_waveform(oscilloscope_channel* ch){
 	for(int j = 0; j < 5; ++j){
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, BLACK);
 	}
+	erase_waveform(ch->waveform_display_previous, ch->x_offset);
+*/
+	ch->x_offset = -htim1.Instance->CNT;
 
-	ch->x_offset = htim1.Instance->CNT;
-
-		for(int i = 0; i < 480; ++i){
-			ch->waveform_display[i] = ch->waveform[i];
-			drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
+	for(int i = 0; i < 480; ++i)
+				ch->waveform_display[i] = ch->waveform[i];
+		for(int i = 0; i < 480-1; ++i){
+			//ch->waveform_display[i] = ch->waveform[i];
+			int x0 = i;
+			int x1 = i+1;
+			int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
+			int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
+			drawLine(x0, y0, x1, y1, GREEN);
+			//drawLine(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, i+1,  CANVA_MIDDLE_V - ch->x_offset -ch->waveform_display[i+1]/40, GREEN);
+			//drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
 			ch->waveform_display_previous[i] = ch->waveform_display[i];
 		}
 	// draw marker 0
