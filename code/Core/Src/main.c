@@ -181,7 +181,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   int faza = 0;
   //drawLine(10, 10, 300, 300, RED);
-  HAL_Delay(1000);
 
   while (1)
   {
@@ -211,13 +210,22 @@ int main(void)
 	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
 	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
 	  HAL_Delay(1000);*/
-	  drawCanva();
+	  //drawCanva();
+	  //ILI9341_Fill_Screen(ILI9488_BLACK);
+	  //drawGrid();
+	  //drawLine(0, 0, 200, 300, 1);
 
-	  //HAL_Delay(1000);
+	  //writeLine(10, 20, 400, 20, 2);
+	  clearScreen();
+	  drawGrid();
 
 	  for(int i = 0; i < 480; ++i){
-	  	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
+	  	  	CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  	    }
+
+	  draw_waveform(& CH1);
+	  imageRender();
+	  //HAL_Delay(1000);
 	  /*for(int i = 0; i < 280; ++i){
 	  	//CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
 	  	CH1.waveform[i] = 0;
@@ -227,8 +235,8 @@ int main(void)
 	  	  	CH1.waveform[i] = 2000 + 2000;
 	  	    }*/
 	  faza++;
+/*
 	  draw_waveform(& CH1);
-
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
 	  setAddrWindow(39, 1, 39+35-1, 1+18-1);
 	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);

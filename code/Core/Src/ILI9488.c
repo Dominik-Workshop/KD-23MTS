@@ -9,12 +9,17 @@
 #include "stdlib.h"
 #include <stdbool.h>
 #include <string.h>
+#include "lcd.h"
 extern SPI_HandleTypeDef hspi1;
 
 extern DMA_HandleTypeDef hdma_spi1_tx;
 
 
 extern uint8_t SPI1_TX_completed_flag;
+
+static uint8_t image_buffer[76800] = {0};
+#define IMG_BUFF_GET(x, y) 		(((x)%2)==0)?(image_buffer[((y)*240)+((x)/2)]>>4):(image_buffer[((y)*240)+((x)/2)]&0x0F)
+#define IMG_BUF_SET(x, y, c) 	if(((x)%2)==0){image_buffer[((y)*240)+((x)/2)]&=0x0F;image_buffer[((y)*240)+((x)/2)]|=((c)<<4);}else{image_buffer[((y)*240)+((x)/2)]&=0xF0;image_buffer[((y)*240)+((x)/2)]|=(c);}
 
 
 
@@ -234,16 +239,16 @@ void fillScreen(uint16_t color)
 {
 	fillRect(0, 0,  _width, _height, color);
 }
+
+void clearScreen(){
+	memset(image_buffer, 0, sizeof(image_buffer));
+}
+
 void drawPixel(int16_t x, int16_t y, uint16_t color)
 {
 	if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height))
 		return;
-
-	setAddrWindow(x, y, x + 1, y + 1);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-	write16BitColor(color);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
+	IMG_BUF_SET(x, y, color);
 
 }
 void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
@@ -255,14 +260,18 @@ void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
 	if ((y + h - 1) >= _height)
 		h = _height - y;
 
-	setAddrWindow(x, y, x, y + h - 1);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-
-	while (h--) {
-		write16BitColor(color);
+	for(uint16_t i = 0; i < h; ++i){
+		IMG_BUF_SET(x, y+i, color);
 	}
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
+
+	//setAddrWindow(x, y, x, y + h - 1);
+	//HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
+
+	//while (h--) {
+	//	write16BitColor(color);
+	//}
+	//HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 
 }
 void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
@@ -272,14 +281,12 @@ void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
 		return;
 	if ((x + w - 1) >= _width)
 		w = _width - x;
-	setAddrWindow(x, y, x + w - 1, y);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-	while (w--)
-	{
-		write16BitColor(color);
-	}
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
+
+	for(uint16_t i = 0; i < w; ++i){
+			IMG_BUF_SET(x+i, y, color);
+		}
+
+
 }
 void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color)
 {
@@ -326,9 +333,11 @@ void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color) {
 
   for (; x0 <= x1; x0++) {
     if (steep) {
-      drawPixel(y0, x0, color);
+      //drawPixel(y0, x0, color);
+    	IMG_BUF_SET(y0, x0, color)
     } else {
-      drawPixel(x0, y0, color);
+      //drawPixel(x0, y0, color);
+    	IMG_BUF_SET(x0, y0, color)
     }
     err -= dy;
     if (err < 0) {
@@ -864,6 +873,67 @@ void drawCanva(){
 		}
 //		HAL_SPI_Transmit(_spi->getHandler(), linebuff, w * 3, 100);
 		HAL_SPI_Transmit(&hspi1, linebuff, w * 3, 100);
+
+	}
+
+	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
+}
+
+static uint8_t colors[16][3] = {
+	{0, 0, 0},
+	{0x55, 0x55, 0x55},	//gray
+	{0, 0x55, 0},
+	{0, 0xAA, 0},
+	{0, 0xFF, 0},
+
+	{0, 0, 0xFF},
+	{0, 0x55, 0xFF},
+	{0, 0xAA, 0xFF},
+	{0, 0xFF, 0xFF},
+
+	{0xFF, 0, 0},
+	{0xFF, 0x55, 0},
+	{0xFF, 0xAA, 0},
+	{0xFF, 0xFF, 0},
+
+	{0xFF, 0, 0xFF},
+	{0xFF, 0x55, 0xFF},
+	{0xFF, 0xFF, 0xFF}
+};
+
+void imageRender(){
+
+	setAddrWindow(0, 0, LCD_WIDTH - 1, LCD_HEIGHT - 1);
+	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
+
+	uint8_t linebuff[LCD_WIDTH * 3 + 1];
+	for (uint16_t i = 0; i < LCD_HEIGHT; i++) {
+		for (uint16_t j = 0; j < LCD_WIDTH/2; j++) {
+			/*uint8_t b1 = img[count];
+			count++;
+			uint8_t b2 = img[count];
+			count++;
+			uint16_t color = b1 << 8 | b2;
+			linebuff[pixcount] = (((color & 0xF800) >> 11) * 255)
+				/ 31;
+			pixcount++;
+			linebuff[pixcount] = (((color & 0x07E0) >> 5) * 255)
+					/ 63;
+			pixcount++;
+			linebuff[pixcount] = ((color & 0x001F) * 255) / 31;
+			pixcount++;*/
+			uint8_t c1 = IMG_BUFF_GET(2*j, i);
+			uint8_t c2 = IMG_BUFF_GET(2*j + 1, i);
+			linebuff[2*3*j + 0 + 0] = colors[c1][0];
+			linebuff[2*3*j + 0 + 1] = colors[c1][1];
+			linebuff[2*3*j + 0 + 2] = colors[c1][2];
+			linebuff[2*3*j + 3 + 0] = colors[c2][0];
+			linebuff[2*3*j + 3 + 1] = colors[c2][1];
+			linebuff[2*3*j + 3 + 2] = colors[c2][2];
+		}
+//		HAL_SPI_Transmit(_spi->getHandler(), linebuff, w * 3, 100);
+		HAL_SPI_Transmit(&hspi1, linebuff, LCD_WIDTH * 3, 100);
 
 	}
 

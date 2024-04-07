@@ -87,25 +87,25 @@ void draw_waveform(oscilloscope_channel* ch){
 			int x1 = i+1;
 			int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
 			int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
-			drawLine(x0, y0, x1, y1, GREEN);
+			drawLine(x0, y0, x1, y1, 10);
 			//drawLine(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, i+1,  CANVA_MIDDLE_V - ch->x_offset -ch->waveform_display[i+1]/40, GREEN);
 			//drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
 			ch->waveform_display_previous[i] = ch->waveform_display[i];
 		}
 	// draw marker 0
 	for(int j = 0; j < 5; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, GREEN);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, 10);
 		}
 		for(int j = 0; j < 6; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, GREEN);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, 10);
 		}
 		for(int j = 0; j < 7; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, GREEN);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, 10);
 		}
 		for(int j = 0; j < 6; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, 10);
 		}
 		for(int j = 0; j < 5; ++j){
-				drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
+				drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, 10);
 		}
 }

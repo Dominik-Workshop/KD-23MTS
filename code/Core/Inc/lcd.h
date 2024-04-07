@@ -15,7 +15,7 @@
 
 #define LCD_WIDTH 480
 #define LCD_HEIGHT 320
-#define LCD_BRIGHTNESS 800 // 0-1000
+#define LCD_BRIGHTNESS 1000 // 0-1000
 
 #define MEMORY_DEPTH  480//512
 
