@@ -97,6 +97,25 @@ volatile uint8_t SPI1_TX_completed_flag = 1;
 
 static int conv_done = 0;
 
+uint8_t trigRisingIcon[15][9] = {
+    {0, 0, 0, 0, WHITE, WHITE, WHITE, WHITE, WHITE},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, WHITE, WHITE, WHITE, 0, 0, 0},
+	{0, 0, WHITE, WHITE, WHITE, WHITE, WHITE, 0, 0},
+	{0, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
+	{WHITE, WHITE, WHITE, WHITE, WHITE, 0, 0, 0, 0},
+};
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -191,55 +210,72 @@ int main(void)
 
   uint8_t changed_var = 0;
   uint16_t timeDiv = 100;
-
+  uint16_t trigger = 140;
   uint64_t prevTime = HAL_GetTick();
   while (1){
 
 	  clearScreen();
 	  drawGrid();
 
+	  drawImageTransparent(trigRisingIcon, 440, 5, 9, 15);
+	  sprintf(buf,"%d", trigger);
+	  LCD_Font(453, 15, buf, _Open_Sans_Bold_12, 1, WHITE);
+
 	  BSP_TS_GetState(&ts);
 	  	  if(ts.TouchDetected){
 	  	  	  fillRect(ts.X, ts.Y, 5, 5, RED);
-	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){
+	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){	// CH1
 	  	  		  if(HAL_GetTick() - prevTime > 1000){
 	  	  			  prevTime = HAL_GetTick();
-					  if(color == GREY){
-						color = YELLOW;
-						changed_var = 0;
-					  }
-					  else
-						color = GREY;
+	  	  			  if(changed_var == 0){
+						  if(color == GREY){
+							color = YELLOW;
+						  }
+						  else
+							color = GREY;
+	  	  			  }
+	  	  			  changed_var = 0;
 	  	  		  }
 	  	  	  }
-	  	  	  if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){
+	  	  	  if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){	//CH2
 	  	  		if(HAL_GetTick() - prevTime > 1000){
 	  	  			prevTime = HAL_GetTick();
-				  if(color2 == GREY){
-					color2 = BLUE;
-					changed_var = 1;
-				  }
-				  else
-					color2 = GREY;
-					}
-			  }
-	  	  	  if(ts.X < 70  && ts.Y < 25){
-	  	  		if(HAL_GetTick() - prevTime > 1000){
-	  	  			changed_var = 2;
-	  	  			fillRect(0, 0, 70, 25, GREY);
+	  	  			if(changed_var == 1){
+					  if(color2 == GREY){
+						color2 = BLUE;
+					  }
+					  else
+						color2 = GREY;
+	  	  			}
+	  	  			changed_var = 1;
 	  	  		}
+			  }
+	  	  	  if(ts.X < 70  && ts.Y < 25){			// Time per division
+	  	  			changed_var = 2;
 	  	  	  }
+	  	  	if(ts.X > 440 && ts.Y < 25){			// trigger
+					changed_var = 3;
+			  }
 	  	  }
+
 
 	  switch(changed_var){
 	  case 0:
 		  CH1.x_offset += -htim1.Instance->CNT;
+		  fillRect(460, 30, 10, 10, CH1.color);
 		  break;
 	  case 1:
 		  CH2.x_offset += -htim1.Instance->CNT;
+		  fillRect(460, 30, 10, 10, CH2.color);
 		  break;
 	  case 2:
 		  timeDiv += -htim1.Instance->CNT;
+		  if((HAL_GetTick()%1000) > 500)
+			  fillRect(0, 0, 70, 23, GREY);
+		  break;
+	  case 3:
+		  trigger += -htim1.Instance->CNT;
+		  drawFastHLine(0, 291 - trigger, 440, RED);
 		  break;
 	  }
 	  htim1.Instance->CNT=0;

@@ -84,3 +84,5 @@ void draw_waveform(oscilloscope_channel* ch){
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, ch->color);
 	}
 }
+
+

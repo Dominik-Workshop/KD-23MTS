@@ -155,6 +155,7 @@ void setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea);
 void scroll(uint16_t pixels);
 void pushColor(uint16_t color);
 void pushColors(uint16_t *data, uint8_t len, uint8_t first);
+void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
 void fillScreen(uint8_t color);
 void drawPixel(int16_t x, int16_t y, uint8_t color);

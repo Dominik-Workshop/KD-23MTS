@@ -240,7 +240,34 @@ void pushColors(uint16_t *data, uint8_t len, uint8_t first){
 	HAL_SPI_Transmit(&hspi1, buff, len * 3, 100);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
+*/
 
+/**
+ * @brief Draws image (img[h][w]) to a buffer
+ *
+ */
+void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+
+	if ((x >= _width) || (y >= _height))
+		return;
+	if ((x + w - 1) >= _width)
+		w = _width - x;
+	if ((y + h - 1) >= _height)
+		h = _height - y;
+
+	for (uint16_t i = 0; i < h; i++) {
+	    for (uint16_t o = 0; o < w; o++) {
+	        if (img[i * w + o] != BLACK) {
+	            drawPixel(x + o, y + i, img[i * w + o]);
+	        }
+	    }
+	}
+}
+
+/**
+ * @brief Draws image (img[h][w]) to a buffer
+ *
+ */
 void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h){
 
 	if ((x >= _width) || (y >= _height))
@@ -249,34 +276,13 @@ void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t 
 		w = _width - x;
 	if ((y + h - 1) >= _height)
 		h = _height - y;
-	setAddrWindow(x, y, x + w - 1, y + h - 1);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 
-	uint8_t linebuff[w * 3 + 1];
-	uint32_t count = 0;
 	for (uint16_t i = 0; i < h; i++) {
-		uint16_t pixcount = 0;
-		for (uint16_t o = 0; o < w; o++) {
-			uint8_t b1 = img[count];
-			count++;
-			uint8_t b2 = img[count];
-			count++;
-			uint16_t color = b1 << 8 | b2;
-			linebuff[pixcount] = (((color & 0xF800) >> 11) * 255)
-				/ 31;
-			pixcount++;
-			linebuff[pixcount] = (((color & 0x07E0) >> 5) * 255)
-					/ 63;
-			pixcount++;
-			linebuff[pixcount] = ((color & 0x001F) * 255) / 31;
-			pixcount++;
-		}
-		HAL_SPI_Transmit(&hspi1, linebuff, w * 3, 100);
+	    for (uint16_t o = 0; o < w; o++) {
+	        drawPixel(x + o, y + i, img[i * w + o]);
+	    }
 	}
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
-*/
 
 /**
  * @brief Fills the entire screen with the specified color.
@@ -795,6 +801,10 @@ void LCD_Font(uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, u
 			cursor_x += glyph.xAdvance * size;
 		}
 	}
+}
+
+void drawImage2(){
+
 }
 
 void drawCanva(){
