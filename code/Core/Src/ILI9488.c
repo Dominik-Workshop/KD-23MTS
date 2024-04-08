@@ -3,21 +3,48 @@
  *
  *  Created on: Apr 29, 2021
  *      Author: hydra
+ *
+ * 	Modified by:
+ * 		Dominik Workshop, Eryk Możdżeń
+ * 		8.04.2024
+ *
+ * 		Added image buffer
  */
 
 #include "ILI9488.h"
 #include "stdlib.h"
 #include <stdbool.h>
 #include <string.h>
-#include "lcd.h"
 
 extern SPI_HandleTypeDef hspi1;
 extern DMA_HandleTypeDef hdma_spi1_tx;
 extern uint8_t SPI1_TX_completed_flag;
 
-static uint8_t image_buffer[76800] = {0};
+
+/**
+ * @brief Buffer storing 4-bit color values for each LCD pixel.
+ * Each byte represents color information for two adjacent pixels, utilizing 4 bits per pixel
+ */
+static uint8_t image_buffer[ILI9488_TFTWIDTH*ILI9488_TFTHEIGHT/2 ] = {0};
+
+/**
+ * @brief Macro to retrieve the color value of a pixel from the image buffer.
+ *
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * @return The 4-bit color value of the specified pixel.
+ */
 #define IMG_BUFF_GET(x, y) 		(((x)%2)==0)?(image_buffer[((y)*240)+((x)/2)]>>4):(image_buffer[((y)*240)+((x)/2)]&0x0F)
-#define IMG_BUF_SET(x, y, c) 	if(((x)%2)==0){image_buffer[((y)*240)+((x)/2)]&=0x0F;image_buffer[((y)*240)+((x)/2)]|=((c)<<4);}else{image_buffer[((y)*240)+((x)/2)]&=0xF0;image_buffer[((y)*240)+((x)/2)]|=(c);}
+
+/**
+ * @brief Macro to set the color value of a pixel in the image buffer.
+ *
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * @param c The 4-bit color value to set for the pixel.
+ */
+#define IMG_BUF_SET(x, y, c) 	if(((x)%2)==0){image_buffer[((y)*(_width/2))+((x)/2)]&=0x0F;image_buffer[((y)*(_width/2))+((x)/2)]|=((c)<<4);} \
+								else{image_buffer[((y)*(_width/2))+((x)/2)]&=0xF0;image_buffer[((y)*(_width/2))+((x)/2)]|=(c);}
 
 
 static uint8_t colors[16][3] = {
@@ -102,69 +129,70 @@ void ILI9488_Init(void){
 	writedata(0x37);
 	writedata(0x0F);
 
-	writecommand(0XC0);      //Power Control 1
-	writedata(0x17);    //Vreg1out
-	writedata(0x15);    //Verg2out
+	writecommand(0XC0);     //Power Control 1
+	writedata(0x17);    	//Vreg1out
+	writedata(0x15);    	//Verg2out
 
-	writecommand(0xC1);      //Power Control 2
-	writedata(0x41);    //VGH,VGL
+	writecommand(0xC1);     //Power Control 2
+	writedata(0x41);    	//VGH,VGL
 
-	writecommand(0xC5);      //Power Control 3
+	writecommand(0xC5);     //Power Control 3
 	writedata(0x00);
-	writedata(0x12);    //Vcom
+	writedata(0x12);    	//Vcom
 	writedata(0x80);
 
-	writecommand(0x36);      //Memory Access
+	writecommand(0x36);     //Memory Access
 	writedata(0x48);
 
-	writecommand(0x36);      // Interface Pixel Format
-	writedata(0x66); 	  //18 bit
+	writecommand(0x36);     // Interface Pixel Format
+	writedata(0x66); 	  	//18 bit
 
-	writecommand(0XB0);      // Interface Mode Control
-	writedata(0x80);     			 //SDO NOT USE
+	writecommand(0XB0);     // Interface Mode Control
+	writedata(0x80);     	//SDO NOT USE
 
-	writecommand(0xB1);      //Frame rate
-	writedata(0xA0);    //60Hz
+	writecommand(0xB1);     //Frame rate
+	writedata(0xA0);    	//60Hz
 
-	writecommand(0xB4);      //Display Inversion Control
-	writedata(0x02);    //2-dot
+	writecommand(0xB4);     //Display Inversion Control
+	writedata(0x02);    	//2-dot
 
-	writecommand(0XB6); //Display Function Control  RGB/MCU Interface Control
+	writecommand(0XB6); 	//Display Function Control  RGB/MCU Interface Control
 
-	writedata(0x02);    //MCU
-	writedata(0x02);    //Source,Gate scan dieection
+	writedata(0x02);    	//MCU
+	writedata(0x02);    	//Source,Gate scan dieection
 
-	writecommand(0XE9);      // Set Image Functio
-	writedata(0x00);    // Disable 24 bit data
+	writecommand(0XE9);     // Set Image Functio
+	writedata(0x00);    	// Disable 24 bit data
 
-	writecommand(0xF7);      // Adjust Control
+	writecommand(0xF7);     // Adjust Control
 	writedata(0xA9);
 	writedata(0x51);
 	writedata(0x2C);
-	writedata(0x82);    // D7 stream, loose
+	writedata(0x82);    	// D7 stream, loose
 
-	writecommand(ILI9488_SLPOUT);    //Exit Sleep
+	writecommand(ILI9488_SLPOUT); 	//Exit Sleep
 
 	HAL_Delay(120);
 
-	writecommand(ILI9488_DISPON);    //Display on
+	writecommand(ILI9488_DISPON); 	//Display on
 }
 
 void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
 	writecommand(ILI9488_CASET); // Column addr set
 	writedata(x0 >> 8);
-	writedata(x0 & 0xFF);     // XSTART
+	writedata(x0 & 0xFF);     	 // XSTART
 	writedata(x1 >> 8);
-	writedata(x1 & 0xFF);     // XEND
+	writedata(x1 & 0xFF);     	 // XEND
 	writecommand(ILI9488_PASET); // Row addr set
 	writedata(y0 >> 8);
-	writedata(y0 & 0xff);     // YSTART
+	writedata(y0 & 0xff);        // YSTART
 	writedata(y1 >> 8);
-	writedata(y1 & 0xff);     // YEND
+	writedata(y1 & 0xff);        // YEND
 	writecommand(ILI9488_RAMWR); // write to RAM
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 }
+
 
 void setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea){
 	writecommand(0x33); // Vertical scroll definition
@@ -182,6 +210,7 @@ void scroll(uint16_t pixels){
 	writedata(pixels);
 }
 
+/*
 void pushColor(uint16_t color){
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
@@ -195,13 +224,11 @@ void pushColors(uint16_t *data, uint8_t len, uint8_t first){
 	uint16_t count = 0;
 	uint8_t lencount = len;
 
-
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-	if (first == 1) {
+	if (first == 1){
 		HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	}
-	while (lencount--)
-	{
+	while (lencount--){
 		color = *data++;
 		buff[count] = (((color & 0xF800) >> 11) * 255) / 31;
 		count++;
@@ -249,16 +276,33 @@ void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t 
 	}
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
+*/
 
-void fillScreen(uint16_t color){
+/**
+ * @brief Fills the entire screen with the specified color.
+ *
+ * @param color The 4-bit color value to fill the screen with.
+ */
+void fillScreen(uint8_t color){
 	fillRect(0, 0,  _width, _height, color);
 }
 
+/**
+ * @brief Sets all pixels to black
+ */
 void clearScreen(){
-	memset(image_buffer, 0, sizeof(image_buffer));
+	memset(image_buffer, BLACK, sizeof(image_buffer));
 }
 
-void drawPixel(int16_t x, int16_t y, uint16_t color){
+/**
+ * @brief Sets the pixel at the specified location to the specified color.
+ *
+ *
+ * @param x The x-coordinate of the pixel.
+ * @param y The y-coordinate of the pixel.
+ * @param color The color value to set for the pixel.
+ */
+void drawPixel(int16_t x, int16_t y, uint8_t color){
 	if ((x < 0) || (x >= _width) || (y < 0) || (y >= _height))
 		return;
 	IMG_BUF_SET(x, y, color);
@@ -328,10 +372,8 @@ void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color){
 
   for (; x0 <= x1; x0++) {
     if (steep) {
-      //drawPixel(y0, x0, color);
     	IMG_BUF_SET(y0, x0, color)
     } else {
-      //drawPixel(x0, y0, color);
     	IMG_BUF_SET(x0, y0, color)
     }
     err -= dy;
@@ -342,14 +384,13 @@ void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color){
   }
 }
 
-void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color){
+void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color){
 	if ((x >= _width) || (y >= _height))
 		return;
 	if ((x + w - 1) >= _width)
 		w = _width - x;
 	if ((y + h - 1) >= _height)
 		h = _height - y;
-
 
 	for(int16_t i = 0; i < w; ++i){
 		for(int16_t j = 0; j < h; ++j){
@@ -405,7 +446,6 @@ void writecommand(uint8_t c){
 }
 
 void write16BitColor(uint16_t color){
-
 	  uint8_t r = (color & 0xF800) >> 11;
 	  uint8_t g = (color & 0x07E0) >> 5;
 	  uint8_t b = color & 0x001F;
@@ -424,14 +464,13 @@ void writedata(uint8_t d){
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 
 	HAL_SPI_Transmit(&hspi1, &d, 1, 1);
-	//HAL_SPI_Transmit(_spi.getHandler(), &tmp,1,100);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
 
 void testLines(uint8_t color){
 	//unsigned long start, t;
 	int x1, y1, x2, y2, w = _width, h = _height;
-	fillScreen(ILI9488_BLACK);
+	fillScreen(BLACK);
 
 	x1 = y1 = 0;
 	y2 = h - 1;
@@ -441,7 +480,7 @@ void testLines(uint8_t color){
 	x2 = w - 1;
 	for (y2 = 0; y2 < h; y2 += 6)
 		drawLine(x1, y1, x2, y2, color);
-	fillScreen(ILI9488_BLACK);
+	fillScreen(BLACK);
 
 	x1 = w - 1;
 	y1 = 0;
@@ -453,7 +492,7 @@ void testLines(uint8_t color){
 	for (y2 = 0; y2 < h; y2 += 6)
 		drawLine(x1, y1, x2, y2, color);
 
-	fillScreen(ILI9488_BLACK);
+	fillScreen(BLACK);
 
 	x1 = 0;
 	y1 = h - 1;
@@ -525,32 +564,27 @@ void sendasIO(uint8_t d){
 
 
 void ILI9341_Draw_Colour(uint16_t Colour){
-//SENDS COLOUR
+	//SENDS COLOUR
 
+	uint8_t r = (Colour & 0xF800) >> 11;
+	uint8_t g = (Colour & 0x07E0) >> 5;
+	uint8_t b = Colour & 0x001F;
 
+	r = (r * 255) / 31;
+	g = (g * 255) / 63;
+	b = (b * 255) / 31;
 
-	  uint8_t r = (Colour & 0xF800) >> 11;
-	  uint8_t g = (Colour & 0x07E0) >> 5;
-	  uint8_t b = Colour & 0x001F;
+	unsigned char TempBuffer[3] = { r, g ,b };
 
-	  r = (r * 255) / 31;
-	  g = (g * 255) / 63;
-	  b = (b * 255) / 31;
+	for (uint32_t j = 0; j < 480*320; j++){
+		HAL_GPIO_WritePin(TFT_DC_GPIO_Port, TFT_DC_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(TFT_CS_GPIO_Port, TFT_CS_Pin, GPIO_PIN_RESET);
 
-		unsigned char TempBuffer[3] =
-		{ r, g ,b };
-
-		for (uint32_t j = 0; j < 480*320; j++)
-		{
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port, TFT_DC_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port, TFT_CS_Pin, GPIO_PIN_RESET);
-
-	SPI1_TX_completed_flag = 0;
-	HAL_SPI_Transmit_DMA(&hspi1, TempBuffer, 3);
-	while (SPI1_TX_completed_flag == 0)
-
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port, TFT_CS_Pin, GPIO_PIN_SET);
-		}
+		SPI1_TX_completed_flag = 0;
+		HAL_SPI_Transmit_DMA(&hspi1, TempBuffer, 3);
+		while (SPI1_TX_completed_flag == 0)
+			HAL_GPIO_WritePin(TFT_CS_GPIO_Port, TFT_CS_Pin, GPIO_PIN_SET);
+	}
 }
 
 //INTERNAL FUNCTION OF LIBRARY
@@ -717,7 +751,6 @@ void ILI9341_Fill_Screen1(uint16_t x, uint16_t y, uint16_t w, uint16_t h,uint16_
 //}
 //
 
-
 void LCD_Char(int16_t x, int16_t y, const GFXglyph *glyph, const GFXfont *font, uint8_t size, uint32_t color24){
 	uint8_t  *bitmap = font -> bitmap;
 	uint16_t bo = glyph -> bitmapOffset;
@@ -813,25 +846,30 @@ void drawCanva(){
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
 
-
+/**
+ * @brief Renders an image stored in an image buffer to the LCD screen
+ *
+ */
 void imageRender(){
-	setAddrWindow(0, 0, LCD_WIDTH - 1, LCD_HEIGHT - 1);
+	setAddrWindow(0, 0, _width - 1, _height - 1);
 	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
 
-	uint8_t linebuff[LCD_WIDTH * 3 + 1];
-	for (uint16_t i = 0; i < LCD_HEIGHT; i++) {
-		for (uint16_t j = 0; j < LCD_WIDTH/2; j++) {
-			uint8_t c1 = IMG_BUFF_GET(2*j, i);
-			uint8_t c2 = IMG_BUFF_GET(2*j + 1, i);
-			linebuff[2*3*j + 0 + 0] = colors[c1][0];
-			linebuff[2*3*j + 0 + 1] = colors[c1][1];
-			linebuff[2*3*j + 0 + 2] = colors[c1][2];
-			linebuff[2*3*j + 3 + 0] = colors[c2][0];
-			linebuff[2*3*j + 3 + 1] = colors[c2][1];
-			linebuff[2*3*j + 3 + 2] = colors[c2][2];
+	// Buffer to hold pixel color data for a single line of the screen
+	uint8_t linebuff[_width * 3 + 1];
+
+	// Iterate through each row (height) of the screen
+	for (uint16_t h = 0; h < _height; h++){
+		// Iterate through each column (width) of the screen
+		for (uint16_t w = 0; w < _width; w++){
+			// Retrieve the pixel color index from the image buffer
+			uint8_t pixel_color = IMG_BUFF_GET(w, h);
+			// Retrieve the RGB color values corresponding to the pixel color index
+			linebuff[3*w + 0] = colors[pixel_color][0];	// r
+			linebuff[3*w + 1] = colors[pixel_color][1];	// g
+			linebuff[3*w + 2] = colors[pixel_color][2];	// b
 		}
-		HAL_SPI_Transmit(&hspi1, linebuff, LCD_WIDTH * 3, 100);
+		HAL_SPI_Transmit(&hspi1, linebuff, _width * 3, 100);
 	}
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }

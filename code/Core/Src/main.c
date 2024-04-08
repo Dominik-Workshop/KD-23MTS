@@ -162,75 +162,37 @@ int main(void)
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
-  //drawGrid();
-
-  setAddrWindow(463, 1, 463+13-1, 1+18-1);
-  ILI9341_Draw_Colour_Burst(YELLOW, 35 * 18);
-  LCD_Font(466, 15, "2", _Open_Sans_Bold_12  , 1, BLACK);
-
-  HAL_Delay(500);
-
-  setAddrWindow(463, 1, 463+13-1, 1+18-1);
-  ILI9341_Draw_Colour_Burst(GREEN, 35 * 18);
-  LCD_Font(440, 15, "Ch:", _Open_Sans_Bold_12  , 1, WHITE);
-  LCD_Font(466, 15, "1", _Open_Sans_Bold_12  , 1, BLACK);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
-  while (1)
-  {
+  while (1){
 
-
-	  /*
-	  drawImage(image, 10, 10, 300, 150);
-	  HAL_Delay(1000);
-	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
-	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
-	  HAL_Delay(1000);*/
-	  //drawCanva();
-	  //ILI9341_Fill_Screen(ILI9488_BLACK);
-	  //drawGrid();
-	  //drawLine(0, 0, 200, 300, 1);
-
-	  //writeLine(10, 20, 400, 20, 2);
 	  clearScreen();
 	  drawGrid();
 
 	  for(int i = 0; i < 480; ++i){
-	  	  	CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
-	  	    }
-
-	  draw_waveform(& CH1);
-	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
-	  imageRender();
-	  //HAL_Delay(1000);
-	  /*for(int i = 0; i < 280; ++i){
-	  	//CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
-	  	CH1.waveform[i] = 0;
-	    }
-	  for(int i = 280; i < 480; ++i){
-	  	  	//CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
-	  	  	CH1.waveform[i] = 2000 + 2000;
-	  	    }*/
+		CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
+	  }
 	  faza++;
-/*
+
 	  draw_waveform(& CH1);
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  setAddrWindow(39, 1, 39+35-1, 1+18-1);
-	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
-
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, GREEN);
 	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
-	  setAddrWindow(122, 1, 122+35-1, 1+18-1);
-	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
-	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
-	  //HAL_Delay(1);
+	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, GREEN);
 
+	  drawChanellVperDev(0, GREEN);
+	  LCD_Font(16, 312, "1", _Open_Sans_Bold_14, 1, BLACK);
+	  LCD_Font(48, 312, "1.00V", _Open_Sans_Bold_14, 1, WHITE);
 
+	  drawChanellVperDev(110, GREY);
+	  LCD_Font(16+110, 312, "2", _Open_Sans_Bold_14, 1, BLACK);
+	  LCD_Font(48+110, 312, "1.00V", _Open_Sans_Bold_14, 1, GREY);
+
+	  imageRender();
 
 /*
 	  //ILI9341_Fill_Screen(ILI9488_BLACK);

@@ -22,6 +22,6 @@
 #define CANVA_MIDDLE_V 170
 
 void drawGrid();
-
+void drawChanellVperDev(uint16_t x, uint8_t color);
 
 #endif
