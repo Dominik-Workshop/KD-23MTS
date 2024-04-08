@@ -94,11 +94,8 @@
 volatile uint8_t SPI1_TX_completed_flag = 1;
 
 
-
-
 static int conv_done = 0;
 
-//uint8_t  image [90000];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,7 +110,6 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	SPI1_TX_completed_flag = 1;
 }
-
 
 
 /* USER CODE END 0 */
@@ -156,6 +152,7 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
   //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
@@ -165,69 +162,42 @@ int main(void)
   ILI9488_Init();
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
-  drawGrid();
-
-  setAddrWindow(463, 1, 463+13-1, 1+18-1);
-  ILI9341_Draw_Colour_Burst(YELLOW, 35 * 18);
-  LCD_Font(466, 15, "2", _Open_Sans_Bold_12  , 1, BLACK);
-
-  HAL_Delay(500);
-
-  setAddrWindow(463, 1, 463+13-1, 1+18-1);
-  ILI9341_Draw_Colour_Burst(GREEN, 35 * 18);
-  LCD_Font(440, 15, "Ch:", _Open_Sans_Bold_12  , 1, WHITE);
-  LCD_Font(466, 15, "1", _Open_Sans_Bold_12  , 1, BLACK);
-
-
-
-  //uint16_t touchX = 0, touchY = 0;
-  /*for(int i = 0; i < 90000; ++i){
-	  image[i] = 0xF;
-	  ++i;
-	  image[i] = 0xA;
-  }
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
-  while (1)
-  {
-	  /*//test drawing method speed
-	  fillRect(0, 0, 480, 320, RED);
-	  ILI9341_Fill_Screen(ILI9488_BLACK);
-	  for(int i = 0; i < 480; i+=1){
-	  		for(int j = 0; j < 320; j+=1)
-	  			drawPixel(i, j, ILI9488_DARKGREY);
-	  	}
-	  	*/
-	  /*
-	  drawImage(image, 10, 10, 300, 150);
-	  HAL_Delay(1000);
-	  setAddrWindow(10, 10, 10+300-1, 10+150-1);
-	  ILI9341_Draw_Colour_Burst(RED, 300 * 150);
-	  HAL_Delay(1000);
-	  */
+  while (1){
+
+	  clearScreen();
+	  drawGrid();
 
 	  for(int i = 0; i < 480; ++i){
-	  	CH1.waveform[i] = 2000*sin(0.05*i + faza*0.1) + 2000;
-	    }
+		CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
+	  }
 	  faza++;
+
+	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0)
+		  htim1.Instance->CNT = 0;
 	  draw_waveform(& CH1);
 
+	  LCD_Font(5, 15, "H  100ms", _Open_Sans_Bold_12  , 1, WHITE);
+
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  setAddrWindow(39, 1, 39+35-1, 1+18-1);
-	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
-
+	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
 	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
-	  setAddrWindow(122, 1, 122+35-1, 1+18-1);
-	  ILI9341_Draw_Colour_Burst(RED, 35 * 18);
-	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
-	  //HAL_Delay(1);
+	  LCD_Font(250+80, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
 
+	  drawChanellVperDev(0, GREEN);
+	  LCD_Font(16, 312, "1", _Open_Sans_Bold_14, 1, BLACK);
+	  LCD_Font(48, 312, "1.00V", _Open_Sans_Bold_14, 1, WHITE);
 
+	  drawChanellVperDev(110, GREY);
+	  LCD_Font(16+110, 312, "2", _Open_Sans_Bold_14, 1, BLACK);
+	  LCD_Font(48+110, 312, "1.00V", _Open_Sans_Bold_14, 1, GREY);
+
+	  imageRender();
 
 /*
 	  //ILI9341_Fill_Screen(ILI9488_BLACK);
@@ -242,21 +212,8 @@ int main(void)
 		  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform, MEMORY_DEPTH);
 		  //HAL_Delay(1);
 	  }
-
-
-
-
-	  //CODE FOR DMA
-	  /*
-	  ILI9341_Fill_Screen(ILI9488_GREEN);
-	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
-	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);HAL_Delay(1000);
-	  ILI9341_Fill_Screen(ILI9488_BLUE);
-	  LCD_Font(20, 100, "ISMAIL", _Open_Sans_Bold_112  , 1, WHITE);
-	  LCD_Font(10, 250, "STM32", _Open_Sans_Bold_112  , 1, WHITE);
-	  HAL_Delay(1000);
-
 	  */
+
 	  //    CODE FOR TOUCH
 	  /*
 	  //char buf[20];

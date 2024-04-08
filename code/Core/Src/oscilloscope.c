@@ -35,69 +35,51 @@ int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
     return (int)rms;
 }
 
-void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint32_t x){
-	for(int i = 0; i < 480; ++i){
-			drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, BLACK);
-		if((i%2==0) || (i ==479)){
-			if(((CANVA_MIDDLE_V - x - waveform[i]/40) == 20) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 80) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 140) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 200) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 260) ||
-			   ((CANVA_MIDDLE_V - x - waveform[i]/40) == 319)){
-				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-		if((i%60==0) || (i ==479)){
-			if(((LCD_HEIGHT/2 - x - waveform[i]/40) % 2) == 0){
-				drawPixel(i, CANVA_MIDDLE_V - x - waveform[i]/40, ILI9488_DARKGREY);
-			}
-		}
-	  }
-}
 
 void draw_waveform(oscilloscope_channel* ch){
-	erase_waveform(ch->waveform_display_previous, ch->x_offset);
+	ch->x_offset = -htim1.Instance->CNT;
 
-
-	// erase marker 0
-	for(int j = 0; j < 5; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, BLACK);
+	for(int i = 0; i < 440; ++i)
+				ch->waveform_display[i] = ch->waveform[i];
+	for(int i = 0; i < 440-1; ++i){
+		//ch->waveform_display[i] = ch->waveform[i];
+		int x0 = i;
+		int x1 = i+1;
+		int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
+		int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
+		if(y0 < 26)
+			y0 = 26;
+		if(y0 > 290)
+			y0 = 290;
+		if(y1 < 26)
+			y1 = 26;
+		if(y1 > 290)
+			y1 = 290;
+		drawLine(x0, y0, x1, y1, GREEN);
 	}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, BLACK);
-	}
-	for(int j = 0; j < 7; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, BLACK);
-	}
-	for(int j = 0; j < 6; ++j){
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, BLACK);
-	}
-	for(int j = 0; j < 5; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, BLACK);
-	}
-
-	ch->x_offset = htim1.Instance->CNT;
-
-		for(int i = 0; i < 480; ++i){
-			ch->waveform_display[i] = ch->waveform[i];
-			drawPixel(i, CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40, GREEN);
-			ch->waveform_display_previous[i] = ch->waveform_display[i];
-		}
 	// draw marker 0
-	for(int j = 0; j < 5; ++j){
+	if((CANVA_MIDDLE_V - ch->x_offset - 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 2 < 290)){
+		for(int j = 0; j < 5; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, GREEN);
-		}
-		for(int j = 0; j < 6; ++j){
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset - 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 1 < 290)){
+		for(int j = 0; j < 6; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, GREEN);
-		}
-		for(int j = 0; j < 7; ++j){
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset > 26) && (CANVA_MIDDLE_V - ch->x_offset < 290)){
+		for(int j = 0; j < 7; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, GREEN);
-		}
-		for(int j = 0; j < 6; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
-		}
-		for(int j = 0; j < 5; ++j){
-				drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
-		}
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset + 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 1 < 290)){
+	for(int j = 0; j < 6; ++j)
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset + 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 2 < 290)){
+	for(int j = 0; j < 5; ++j)
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
+	}
 }

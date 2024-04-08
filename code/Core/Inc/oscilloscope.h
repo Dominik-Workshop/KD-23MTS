@@ -26,7 +26,6 @@ typedef struct oscilloscope_ch{
 	int16_t y_scale;								// vertical scale [V/div]
 
 	uint16_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed
-	uint16_t waveform_display_previous[LCD_WIDTH];	// section of waveform previously displayed, used to clear old waveform
 
 }oscilloscope_channel;
 
@@ -34,7 +33,6 @@ void oscilloscope_channel_init(oscilloscope_channel* ch);
 int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]);
 int calculate_RMS(int16_t waveform[MEMORY_DEPTH]);
 
-void erase_waveform(uint16_t waveform[MEMORY_DEPTH], uint32_t x);
 void draw_waveform(oscilloscope_channel* ch);
 
 
