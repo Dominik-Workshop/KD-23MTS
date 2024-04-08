@@ -3,8 +3,6 @@
 
 #include "main.h"
 
-
-
 #define	XPT2046_ACCURACY 	0
 #define	XPT2046_REVERSED 	1
 #define	XPT2046_MIRROR_X 	1

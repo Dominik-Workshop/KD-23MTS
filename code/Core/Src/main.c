@@ -24,6 +24,8 @@
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"
+#include "ts.h"
+#include "stm32_adafruit_ts.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -110,8 +112,10 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	SPI1_TX_completed_flag = 1;
 }
+extern  TS_DrvTypeDef         *ts_drv;
+#define ts_calib()
 
-
+void mainApp(void);
 /* USER CODE END 0 */
 
 /**
@@ -168,10 +172,43 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
+
+  TS_StateTypeDef ts;
+  BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
+  ts_calib();
+
+  uint8_t color = YELLOW;
+  uint8_t color2 = GREY;
+
+  uint64_t prevTime = HAL_GetTick();
   while (1){
 
 	  clearScreen();
 	  drawGrid();
+
+	  BSP_TS_GetState(&ts);
+	  	  if(ts.TouchDetected){
+	  	  	  fillRect(ts.X, ts.Y, 5, 5, RED);
+	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){
+	  	  		  if(HAL_GetTick() - prevTime > 1000){
+	  	  			  prevTime = HAL_GetTick();
+					  if(color == GREY)
+						color = YELLOW;
+					  else
+						color = GREY;
+	  	  		  }
+	  	  	  }
+	  	  	  if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){
+	  	  		if(HAL_GetTick() - prevTime > 1000){
+	  	  			prevTime = HAL_GetTick();
+				  if(color2 == GREY)
+					color2 = BLUE;
+				  else
+					color2 = GREY;
+					}
+			  }
+	  	  }
+
 
 	  for(int i = 0; i < 480; ++i){
 		CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
@@ -185,17 +222,17 @@ int main(void)
 	  LCD_Font(5, 15, "H  100ms", _Open_Sans_Bold_12  , 1, WHITE);
 
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
+	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);
 	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
-	  LCD_Font(250+80, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
+	  LCD_Font(250+80, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);
 
-	  drawChanellVperDev(0, GREEN);
+	  drawChanellVperDev(0, color);
 	  LCD_Font(16, 312, "1", _Open_Sans_Bold_14, 1, BLACK);
-	  LCD_Font(48, 312, "1.00V", _Open_Sans_Bold_14, 1, WHITE);
+	  LCD_Font(48, 312, "1.00V", _Open_Sans_Bold_14, 1, color);
 
-	  drawChanellVperDev(110, GREY);
+	  drawChanellVperDev(110, color2);
 	  LCD_Font(16+110, 312, "2", _Open_Sans_Bold_14, 1, BLACK);
-	  LCD_Font(48+110, 312, "1.00V", _Open_Sans_Bold_14, 1, GREY);
+	  LCD_Font(48+110, 312, "1.00V", _Open_Sans_Bold_14, 1, color2);
 
 	  imageRender();
 

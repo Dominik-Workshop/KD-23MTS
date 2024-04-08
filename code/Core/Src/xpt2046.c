@@ -28,7 +28,7 @@ uint16_t getRaw(uint8_t address)
 	HAL_SPI_Transmit(&hspi2, &address, 1, 1000);
 	address = 0x00;
 	HAL_SPI_TransmitReceive(&hspi2, &address, &data, sizeof(data), 1000);
-	MSB = data;   
+	MSB = data;
 	address = 0x00;
 	HAL_SPI_TransmitReceive(&hspi2, &address, &data, sizeof(data), 1000);
 	LSB = data;
@@ -65,7 +65,7 @@ uint16_t getX(void)
 			else { x[0] = X(); x[1] = X(); }
 		}
 		return x[0];
-	} 
+	}
 	else if (XPT2046_REVERSED) return Y(); else return X();
 }
 
