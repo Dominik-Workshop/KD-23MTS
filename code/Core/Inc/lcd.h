@@ -19,7 +19,7 @@
 
 #define MEMORY_DEPTH  480//512
 
-#define CANVA_MIDDLE_V 170
+#define CANVA_MIDDLE_V 158
 
 void drawGrid();
 void drawChanellVperDev(uint16_t x, uint8_t color);

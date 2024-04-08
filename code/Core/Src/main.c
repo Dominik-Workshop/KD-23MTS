@@ -178,11 +178,16 @@ int main(void)
 	  }
 	  faza++;
 
+	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0)
+		  htim1.Instance->CNT = 0;
 	  draw_waveform(& CH1);
+
+	  LCD_Font(5, 15, "H  100ms", _Open_Sans_Bold_12  , 1, WHITE);
+
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, GREEN);
+	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
 	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
-	  LCD_Font(80, 15, buf, _Open_Sans_Bold_12  , 1, GREEN);
+	  LCD_Font(250+80, 312, buf, _Open_Sans_Bold_12  , 1, GREEN);
 
 	  drawChanellVperDev(0, GREEN);
 	  LCD_Font(16, 312, "1", _Open_Sans_Bold_14, 1, BLACK);

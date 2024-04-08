@@ -41,28 +41,45 @@ void draw_waveform(oscilloscope_channel* ch){
 
 	for(int i = 0; i < 440; ++i)
 				ch->waveform_display[i] = ch->waveform[i];
-		for(int i = 0; i < 440-1; ++i){
-			//ch->waveform_display[i] = ch->waveform[i];
-			int x0 = i;
-			int x1 = i+1;
-			int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
-			int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
-			drawLine(x0, y0, x1, y1, GREEN);
-		}
+	for(int i = 0; i < 440-1; ++i){
+		//ch->waveform_display[i] = ch->waveform[i];
+		int x0 = i;
+		int x1 = i+1;
+		int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
+		int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
+		if(y0 < 26)
+			y0 = 26;
+		if(y0 > 290)
+			y0 = 290;
+		if(y1 < 26)
+			y1 = 26;
+		if(y1 > 290)
+			y1 = 290;
+		drawLine(x0, y0, x1, y1, GREEN);
+	}
 	// draw marker 0
-	for(int j = 0; j < 5; ++j){
+	if((CANVA_MIDDLE_V - ch->x_offset - 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 2 < 290)){
+		for(int j = 0; j < 5; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, GREEN);
-		}
-		for(int j = 0; j < 6; ++j){
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset - 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 1 < 290)){
+		for(int j = 0; j < 6; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, GREEN);
-		}
-		for(int j = 0; j < 7; ++j){
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset > 26) && (CANVA_MIDDLE_V - ch->x_offset < 290)){
+		for(int j = 0; j < 7; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, GREEN);
-		}
-		for(int j = 0; j < 6; ++j){
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
-		}
-		for(int j = 0; j < 5; ++j){
-				drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
-		}
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset + 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 1 < 290)){
+	for(int j = 0; j < 6; ++j)
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, GREEN);
+	}
+
+	if((CANVA_MIDDLE_V - ch->x_offset + 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 2 < 290)){
+	for(int j = 0; j < 5; ++j)
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, GREEN);
+	}
 }
