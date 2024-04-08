@@ -24,13 +24,12 @@
 #include "spi.h"
 #include "tim.h"
 #include "gpio.h"
-#include "ts.h"
-#include "stm32_adafruit_ts.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ts.h"
+#include "stm32_adafruit_ts.h"
 #include "ili9488.h"
-#include "xpt2046.h"
 #include "stdio.h"
 #include "oscilloscope.h"
 #include "008_Open_Sans_Bold.h"
@@ -126,7 +125,10 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
   oscilloscope_channel CH1;
-  oscilloscope_channel_init(&CH1);
+  oscilloscope_channel_init(&CH1, YELLOW);
+
+  oscilloscope_channel CH2;
+  oscilloscope_channel_init(&CH2, BLUE);
 
   char buf[20];						// buffer for measurements to be displayed
   /* USER CODE END 1 */
@@ -177,8 +179,18 @@ int main(void)
   BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
   ts_calib();
 
+  for(int i = 0; i < 480; ++i){
+  		CH2.waveform[i] = 0;
+  }
+  for(int i = 200; i < 350; ++i){
+    		CH2.waveform[i] = 3000;
+  }
+
   uint8_t color = YELLOW;
   uint8_t color2 = GREY;
+
+  uint8_t changed_var = 0;
+  uint16_t timeDiv = 100;
 
   uint64_t prevTime = HAL_GetTick();
   while (1){
@@ -192,8 +204,10 @@ int main(void)
 	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){
 	  	  		  if(HAL_GetTick() - prevTime > 1000){
 	  	  			  prevTime = HAL_GetTick();
-					  if(color == GREY)
+					  if(color == GREY){
 						color = YELLOW;
+						changed_var = 0;
+					  }
 					  else
 						color = GREY;
 	  	  		  }
@@ -201,25 +215,59 @@ int main(void)
 	  	  	  if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){
 	  	  		if(HAL_GetTick() - prevTime > 1000){
 	  	  			prevTime = HAL_GetTick();
-				  if(color2 == GREY)
+				  if(color2 == GREY){
 					color2 = BLUE;
+					changed_var = 1;
+				  }
 				  else
 					color2 = GREY;
 					}
 			  }
+	  	  	  if(ts.X < 70  && ts.Y < 25){
+	  	  		if(HAL_GetTick() - prevTime > 1000){
+	  	  			changed_var = 2;
+	  	  			fillRect(0, 0, 70, 25, GREY);
+	  	  		}
+	  	  	  }
 	  	  }
 
+	  switch(changed_var){
+	  case 0:
+		  CH1.x_offset += -htim1.Instance->CNT;
+		  break;
+	  case 1:
+		  CH2.x_offset += -htim1.Instance->CNT;
+		  break;
+	  case 2:
+		  timeDiv += -htim1.Instance->CNT;
+		  break;
+	  }
+	  htim1.Instance->CNT=0;
 
 	  for(int i = 0; i < 480; ++i){
 		CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  }
 	  faza++;
 
-	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0)
-		  htim1.Instance->CNT = 0;
-	  draw_waveform(& CH1);
+	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+		  switch(changed_var){
+		  	  case 0:
+		  		  CH1.x_offset = 0;
+		  		  break;
+		  	  case 1:
+		  		  CH2.x_offset = 0;
+		  		  break;
+		  }
+	  }
 
-	  LCD_Font(5, 15, "H  100ms", _Open_Sans_Bold_12  , 1, WHITE);
+	  if(color == YELLOW)
+		  draw_waveform(& CH1);
+
+	  if(color2 == BLUE)
+		  draw_waveform(& CH2);
+
+	  sprintf(buf,"H %dms", timeDiv);
+	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
 
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
 	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);

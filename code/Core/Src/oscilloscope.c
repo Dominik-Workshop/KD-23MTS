@@ -7,10 +7,11 @@
 
 #include "oscilloscope.h"
 
-void oscilloscope_channel_init(oscilloscope_channel* ch){
+void oscilloscope_channel_init(oscilloscope_channel* ch, uint8_t color){
 	ch->x_offset = 0;
 	ch->y_offset = 0;
 	ch->y_scale = 0;
+	ch->color = color;
 }
 
 
@@ -37,7 +38,7 @@ int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
 
 
 void draw_waveform(oscilloscope_channel* ch){
-	ch->x_offset = -htim1.Instance->CNT;
+
 
 	for(int i = 0; i < 440; ++i)
 				ch->waveform_display[i] = ch->waveform[i];
@@ -55,31 +56,31 @@ void draw_waveform(oscilloscope_channel* ch){
 			y1 = 26;
 		if(y1 > 290)
 			y1 = 290;
-		drawLine(x0, y0, x1, y1, YELLOW);
+		drawLine(x0, y0, x1, y1, ch->color);
 	}
 	// draw marker 0
 	if((CANVA_MIDDLE_V - ch->x_offset - 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 2 < 290)){
 		for(int j = 0; j < 5; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, YELLOW);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, ch->color);
 	}
 
 	if((CANVA_MIDDLE_V - ch->x_offset - 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 1 < 290)){
 		for(int j = 0; j < 6; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, YELLOW);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, ch->color);
 	}
 
 	if((CANVA_MIDDLE_V - ch->x_offset > 26) && (CANVA_MIDDLE_V - ch->x_offset < 290)){
 		for(int j = 0; j < 7; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, YELLOW);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, ch->color);
 	}
 
 	if((CANVA_MIDDLE_V - ch->x_offset + 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 1 < 290)){
 	for(int j = 0; j < 6; ++j)
-		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, YELLOW);
+		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, ch->color);
 	}
 
 	if((CANVA_MIDDLE_V - ch->x_offset + 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 2 < 290)){
 	for(int j = 0; j < 5; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, YELLOW);
+			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, ch->color);
 	}
 }

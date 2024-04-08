@@ -26,10 +26,11 @@ typedef struct oscilloscope_ch{
 	int16_t y_scale;								// vertical scale [V/div]
 
 	uint16_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed
+	uint8_t color;
 
 }oscilloscope_channel;
 
-void oscilloscope_channel_init(oscilloscope_channel* ch);
+void oscilloscope_channel_init(oscilloscope_channel* ch, uint8_t color);
 int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]);
 int calculate_RMS(int16_t waveform[MEMORY_DEPTH]);
 
