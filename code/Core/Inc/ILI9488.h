@@ -182,5 +182,6 @@ void LCD_Font(uint16_t x, uint16_t y, const char *text, const GFXfont *p_font, u
 void drawCanva();
 void imageRender();
 void clearScreen();
+void drawRectangleRoundedFrame(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, int16_t radius);
 
 #endif /* ILI9488_H_ */

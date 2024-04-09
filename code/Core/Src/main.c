@@ -98,21 +98,40 @@ volatile uint8_t SPI1_TX_completed_flag = 1;
 static int conv_done = 0;
 
 uint8_t trigRisingIcon[15][9] = {
-    {0, 0, 0, 0, WHITE, WHITE, WHITE, WHITE, WHITE},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, WHITE, WHITE, WHITE, 0, 0, 0},
-	{0, 0, WHITE, WHITE, WHITE, WHITE, WHITE, 0, 0},
-	{0, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{0, 0, 0, 0, WHITE, 0, 0, 0, 0},
-	{WHITE, WHITE, WHITE, WHITE, WHITE, 0, 0, 0, 0},
+    {0     , 0     , 0     , 0     , WHITE , WHITE , WHITE , WHITE , WHITE},
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0     },
+    {0     , 0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0     },
+    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
+    {WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0     , 0     , 0     }
+};
+
+
+uint8_t arrowUpDown[15][8] = {
+    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0},
+    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
+	{0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
+    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0},
+    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
+    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0}
 };
 
 
@@ -218,6 +237,9 @@ int main(void)
 	  drawGrid();
 
 	  drawImageTransparent(trigRisingIcon, 440, 5, 9, 15);
+	  drawImageTransparent(arrowUpDown, 460, 60, 8, 15);
+
+	  drawRectangleRoundedFrame(450, 50, 25, 40, RED, 2);
 	  sprintf(buf,"%d", trigger);
 	  LCD_Font(453, 15, buf, _Open_Sans_Bold_12, 1, WHITE);
 

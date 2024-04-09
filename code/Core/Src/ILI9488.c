@@ -883,3 +883,32 @@ void imageRender(){
 	}
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
+
+void drawRectangleRoundedFrame(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, int16_t radius) {
+    drawFastHLine(x + 5, y, w - 9, color); // Top line
+    drawFastHLine(x + 5, y + h, w - 9, color); // Bottom line
+
+    drawFastVLine(x, y + 5, h - 9, color); // Left line
+    drawFastVLine(x + w, y + 5, h - 9, color); // Right line
+
+    // right top corner
+    drawFastHLine(x + 3, y + 1, 2, color); // Top line
+    drawFastVLine(x + 1, y + 3, 2, color); // Left line
+    drawPixel(x + 2, y + 2, color);
+
+    // left top corner
+	drawFastHLine(x - 4 + w, y + 1, 2, color); // Top line
+	drawFastVLine(x - 1 + w, y + 3, 2, color); // Right line
+	drawPixel(x - 2 + w, y + 2, color);
+
+	// right bottom corner
+	drawFastHLine(x + 3, y - 1 + h, 2, color); // Bottom line
+	drawFastVLine(x + 1, y - 4 + h, 2, color); // Left line
+	drawPixel(x + 2, y - 2 + h, color);
+
+	// left bottom corner
+	drawFastHLine(x - 4 + w, y - 1 + h, 2, color); // Bottom line
+	drawFastVLine(x - 1 + w, y - 4 + h, 2, color); // Left line
+	drawPixel(x - 2 + w, y - 2 + h, color);
+}
+
