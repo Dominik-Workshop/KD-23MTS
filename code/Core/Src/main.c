@@ -198,6 +198,25 @@ void drawMainMenu(uint8_t color){
 	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
 }
 
+void drawCursorsMenu(uint8_t color){
+	drawRectangleRoundedFrame(423, 32, 56, 253, color);
+
+	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, color);
+
+	LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, color);
+	drawRectangleRoundedFrame(425, 50, 52, 40, color);
+
+	drawImageTransparent(arrowLeftRight, 443, 112, 15, 7);
+	drawRectangleRoundedFrame(425, 92, 52, 40, color);
+
+	drawImageTransparent(arrowUpDown, 447, 108 + 40, 8, 15);
+	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
+
+
+
+
+}
+
 void mainApp(void);
 /* USER CODE END 0 */
 
@@ -276,9 +295,13 @@ int main(void)
   uint8_t changed_var = 0;
   uint16_t timeDiv = 100;
   uint16_t trigger = 140;
+  uint16_t voltDiv = 1;
   uint64_t prevTime = HAL_GetTick();
   int16_t encoder1 = 200;
   int16_t encoder2 = 100;
+  int16_t encoder3 = 200;
+  int16_t encoder4 = 100;
+
   while (1){
 
 	  clearScreen();
@@ -328,7 +351,15 @@ int main(void)
 					  changed_var = 11;
 
 				  }
-			  }else
+
+			  }else if(ts.X > 425 && ts.Y < 174 && ts.Y > 134){
+				  if(changed_var == 11){
+				  					  changed_var = 12;
+
+				  				  }
+			  }
+
+			  else
 				  changed_var = 10;
 	  	  }
 
@@ -354,7 +385,7 @@ int main(void)
 		  drawFastHLine(0, 291 - trigger, 420, RED);
 		  break;
 	  case 11:
-
+		  drawCursorsMenu(WHITE);
 		  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin)==0){
 			  if(encoder_button_state == 0){
 				  encoder_button_state = 1;
@@ -365,23 +396,40 @@ int main(void)
 
 		  if(encoder_button_state == 0){
 			  encoder1 += -htim1.Instance->CNT;
-			  LCD_Font(440, 67, "1", _Open_Sans_Bold_12, 1, WHITE);
+			  LCD_Font(440, 220, "1", _Open_Sans_Bold_12, 1, WHITE);
 			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 0, encoder1));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
+			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  }else{
 			  encoder2 += -htim1.Instance->CNT;
-			  LCD_Font(440, 67, "2", _Open_Sans_Bold_12, 1, WHITE);
+			  LCD_Font(440, 220, "2", _Open_Sans_Bold_12, 1, WHITE);
 			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 1, encoder2));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
+			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  }
 
-
-
-		  //drawFastVLine(220 - encoder1, 32, 253, RED);
-
-		  sprintf(buf,"%d", encoder1);
-		  LCD_Font(440, 47, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  break;
+	  case 12:
+	  		  drawCursorsMenu(YELLOW);
+	  		  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin)==0){
+	  			  if(encoder_button_state == 0){
+	  				  encoder_button_state = 1;
+	  			  }else{
+	  				  encoder_button_state = 0;
+	  			  }
+	  		  }
+
+	  		  if(encoder_button_state == 0){
+	  			  encoder3 += -htim1.Instance->CNT;
+	  			  LCD_Font(440, 220, "1", _Open_Sans_Bold_12, 1, WHITE);
+	  			  sprintf(buf,"%d", drawCursorsVoltage(voltDiv *1000, 0, encoder3));
+	  			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
+	  		  }else{
+	  			  encoder4 += -htim1.Instance->CNT;
+	  			  LCD_Font(440, 220, "2", _Open_Sans_Bold_12, 1, WHITE);
+	  			  sprintf(buf,"%d", drawCursorsVoltage(voltDiv *1000, 1, encoder4));
+	  			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
+	  		  }
+
+	  		  break;
 	  case 10:
 		  drawMainMenu(WHITE);
 		  break;
