@@ -25,16 +25,16 @@ uint8_t dHeight = GRID_HEIGHT/8;
 
 void drawGrid(){
 	// draw vertical lines
-	for(int i = 0; i < 441; i += 44)
-		drawFastVLine(i, 26, 291-26, GREY);
+	for(int i = 0; i < 441; i += 42)
+		drawFastVLine(i, 32, 253, GREY);
 	// draw horizontal lines
-	for(int i = 26; i < 291; i += 44)
-		drawFastHLine(0, i, 440, GREY);
+	for(int i = 32; i < 291; i += 42)
+		drawFastHLine(0, i, 420, GREY);
 
-	for(int i = 21; i < 441; i += 44)
+	for(int i = 21; i < 441; i += 42)
 			drawFastVLine(i, 156, 5, GREY);
-	for(int i = 47; i < 291; i += 44)
-			drawFastHLine(218, i, 5, GREY);
+	for(int i = 53; i < 291; i += 42)
+			drawFastHLine(208, i, 5, GREY);
 }
 
 void drawChanellVperDev(uint16_t x, uint8_t color){

@@ -134,6 +134,18 @@ uint8_t arrowUpDown[15][8] = {
     {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0}
 };
 
+uint8_t arrowLeftRight[7][15] = {
+    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0},
+    {0     , 0     , WHITE , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , WHITE , 0     , 0},
+    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
+    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE},
+    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
+    {0     , 0     , WHITE , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , WHITE , 0     , 0},
+    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0}
+};
+
+
+
 
 /* USER CODE END PV */
 
@@ -151,6 +163,39 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 }
 extern  TS_DrvTypeDef         *ts_drv;
 #define ts_calib()
+
+void drawMenu(uint8_t color){
+	drawRectangleRoundedFrame(423, 32, 56, 253, color);
+
+	if(color == YELLOW)
+		LCD_Font(437, 45, "CH 1", _Open_Sans_Bold_12, 1, color);
+	else
+		LCD_Font(437, 45, "CH 2", _Open_Sans_Bold_12, 1, color);
+
+	LCD_Font(433, 74, "Scale", _Open_Sans_Bold_12, 1, color);
+	drawRectangleRoundedFrame(425, 50, 52, 40, color);
+
+	drawImageTransparent(arrowUpDown, 447, 105, 8, 15);
+	drawRectangleRoundedFrame(425, 92, 52, 40, color);
+
+	drawImageTransparent(arrowLeftRight, 443, 108 + 42, 15, 7);
+	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
+}
+
+void drawMainMenu(uint8_t color){
+	drawRectangleRoundedFrame(423, 32, 56, 253, color);
+
+	LCD_Font(433, 45, "Menu", _Open_Sans_Bold_12, 1, color);
+
+	LCD_Font(428, 74, "Cursor", _Open_Sans_Bold_12, 1, color);
+	drawRectangleRoundedFrame(425, 50, 52, 40, color);
+
+	LCD_Font(438, 74+42, "FFT", _Open_Sans_Bold_12, 1, color);
+	drawRectangleRoundedFrame(425, 92, 52, 40, color);
+
+	LCD_Font(426, 74+84, "Measur", _Open_Sans_Bold_12, 1, color);
+	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
+}
 
 void mainApp(void);
 /* USER CODE END 0 */
@@ -235,16 +280,14 @@ int main(void)
 
 	  clearScreen();
 	  drawGrid();
-
 	  drawImageTransparent(trigRisingIcon, 440, 5, 9, 15);
-	  drawImageTransparent(arrowUpDown, 460, 60, 8, 15);
 
-	  drawRectangleRoundedFrame(450, 50, 25, 40, RED, 2);
 	  sprintf(buf,"%d", trigger);
-	  LCD_Font(453, 15, buf, _Open_Sans_Bold_12, 1, WHITE);
+	  LCD_Font(453, 17, buf, _Open_Sans_Bold_12, 1, WHITE);
 
 	  BSP_TS_GetState(&ts);
 	  	  if(ts.TouchDetected){
+
 	  	  	  fillRect(ts.X, ts.Y, 5, 5, RED);
 	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){	// CH1
 	  	  		  if(HAL_GetTick() - prevTime > 1000){
@@ -259,7 +302,7 @@ int main(void)
 	  	  			  changed_var = 0;
 	  	  		  }
 	  	  	  }
-	  	  	  if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){	//CH2
+	  	  	  else if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){	//CH2
 	  	  		if(HAL_GetTick() - prevTime > 1000){
 	  	  			prevTime = HAL_GetTick();
 	  	  			if(changed_var == 1){
@@ -272,32 +315,38 @@ int main(void)
 	  	  			changed_var = 1;
 	  	  		}
 			  }
-	  	  	  if(ts.X < 70  && ts.Y < 25){			// Time per division
+	  	  	  else if(ts.X < 70  && ts.Y < 25){			// Time per division
 	  	  			changed_var = 2;
 	  	  	  }
-	  	  	if(ts.X > 440 && ts.Y < 25){			// trigger
+	  	  	  else if(ts.X > 440 && ts.Y < 25){			// trigger
 					changed_var = 3;
-			  }
+			  }else
+				  changed_var = 10;
 	  	  }
 
 
 	  switch(changed_var){
 	  case 0:
 		  CH1.x_offset += -htim1.Instance->CNT;
-		  fillRect(460, 30, 10, 10, CH1.color);
+		  //fillRect(470, 310, 10, 10, CH1.color);
+		  drawMenu(CH1.color);
 		  break;
 	  case 1:
 		  CH2.x_offset += -htim1.Instance->CNT;
-		  fillRect(460, 30, 10, 10, CH2.color);
+		  //fillRect(470, 310, 10, 10, CH2.color);
+		  drawMenu(CH2.color);
 		  break;
 	  case 2:
 		  timeDiv += -htim1.Instance->CNT;
 		  if((HAL_GetTick()%1000) > 500)
-			  fillRect(0, 0, 70, 23, GREY);
+		  	  drawRectangleRoundedFrame(3, 3, 70, 22, GREY);
 		  break;
 	  case 3:
 		  trigger += -htim1.Instance->CNT;
-		  drawFastHLine(0, 291 - trigger, 440, RED);
+		  drawFastHLine(0, 291 - trigger, 420, RED);
+		  break;
+	  default:
+		  drawMainMenu(WHITE);
 		  break;
 	  }
 	  htim1.Instance->CNT=0;
@@ -325,7 +374,7 @@ int main(void)
 		  draw_waveform(& CH2);
 
 	  sprintf(buf,"H %dms", timeDiv);
-	  LCD_Font(5, 15, buf, _Open_Sans_Bold_12  , 1, WHITE);
+	  LCD_Font(8, 19, buf, _Open_Sans_Bold_12  , 1, WHITE);
 
 	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
 	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);

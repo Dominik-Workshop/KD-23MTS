@@ -40,46 +40,46 @@ int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
 void draw_waveform(oscilloscope_channel* ch){
 
 
-	for(int i = 0; i < 440; ++i)
+	for(int i = 0; i < 420; ++i)
 				ch->waveform_display[i] = ch->waveform[i];
-	for(int i = 0; i < 440-1; ++i){
+	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
 		int x0 = i;
 		int x1 = i+1;
 		int y0 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i]/40;
 		int y1 = CANVA_MIDDLE_V - ch->x_offset - ch->waveform_display[i+1]/40;
-		if(y0 < 26)
-			y0 = 26;
-		if(y0 > 290)
-			y0 = 290;
-		if(y1 < 26)
-			y1 = 26;
-		if(y1 > 290)
-			y1 = 290;
+		if(y0 < 32)
+			y0 = 32;
+		if(y0 > 284)
+			y0 = 284;
+		if(y1 < 32)
+			y1 = 32;
+		if(y1 > 284)
+			y1 = 284;
 		drawLine(x0, y0, x1, y1, ch->color);
 	}
 	// draw marker 0
-	if((CANVA_MIDDLE_V - ch->x_offset - 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 2 < 290)){
+	if((CANVA_MIDDLE_V - ch->x_offset - 2 > 32) && (CANVA_MIDDLE_V - ch->x_offset - 2 < 284)){
 		for(int j = 0; j < 5; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 2, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->x_offset - 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset - 1 < 290)){
+	if((CANVA_MIDDLE_V - ch->x_offset - 1 > 32) && (CANVA_MIDDLE_V - ch->x_offset - 1 < 284)){
 		for(int j = 0; j < 6; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset - 1, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->x_offset > 26) && (CANVA_MIDDLE_V - ch->x_offset < 290)){
+	if((CANVA_MIDDLE_V - ch->x_offset > 32) && (CANVA_MIDDLE_V - ch->x_offset < 284)){
 		for(int j = 0; j < 7; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->x_offset + 1 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 1 < 290)){
+	if((CANVA_MIDDLE_V - ch->x_offset + 1 > 32) && (CANVA_MIDDLE_V - ch->x_offset + 1 < 284)){
 	for(int j = 0; j < 6; ++j)
 		drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 1, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->x_offset + 2 > 26) && (CANVA_MIDDLE_V - ch->x_offset + 2 < 290)){
+	if((CANVA_MIDDLE_V - ch->x_offset + 2 > 32) && (CANVA_MIDDLE_V - ch->x_offset + 2 < 284)){
 	for(int j = 0; j < 5; ++j)
 			drawPixel(j, CANVA_MIDDLE_V - ch->x_offset + 2, ch->color);
 	}

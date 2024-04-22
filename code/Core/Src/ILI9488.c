@@ -884,7 +884,7 @@ void imageRender(){
 	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_SET);
 }
 
-void drawRectangleRoundedFrame(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color, int16_t radius) {
+void drawRectangleRoundedFrame(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color) {
     drawFastHLine(x + 5, y, w - 9, color); // Top line
     drawFastHLine(x + 5, y + h, w - 9, color); // Bottom line
 
