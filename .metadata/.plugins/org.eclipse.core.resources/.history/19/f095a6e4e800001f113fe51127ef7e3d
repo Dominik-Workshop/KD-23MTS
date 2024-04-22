@@ -277,8 +277,7 @@ int main(void)
   uint16_t timeDiv = 100;
   uint16_t trigger = 140;
   uint64_t prevTime = HAL_GetTick();
-  int16_t encoder1 = 200;
-  int16_t encoder2 = 100;
+  int32_t encoder1 = 0;
   while (1){
 
 	  clearScreen();
@@ -354,33 +353,11 @@ int main(void)
 		  drawFastHLine(0, 291 - trigger, 420, RED);
 		  break;
 	  case 11:
-
-		  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin)==0){
-			  if(encoder_button_state == 0){
-				  encoder_button_state = 1;
-			  }else{
-				  encoder_button_state = 0;
-			  }
-		  }
-
-		  if(encoder_button_state == 0){
-			  encoder1 += -htim1.Instance->CNT;
-			  LCD_Font(440, 67, "1", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 0, encoder1));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
-		  }else{
-			  encoder2 += -htim1.Instance->CNT;
-			  LCD_Font(440, 67, "2", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 1, encoder2));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
-		  }
-
-
-
-		  //drawFastVLine(220 - encoder1, 32, 253, RED);
-
+		  encoder1 += htim1.Instance->CNT;
+		  drawFastHLine(0, 291 - encoder1, 420, RED);
+		  drawCursorsTime(timeDiv, 1, 200 - encoder1);
 		  sprintf(buf,"%d", encoder1);
-		  LCD_Font(440, 47, buf, _Open_Sans_Bold_12, 1, WHITE);
+		  LCD_Font(453, 47, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  break;
 	  case 10:
 		  drawMainMenu(WHITE);

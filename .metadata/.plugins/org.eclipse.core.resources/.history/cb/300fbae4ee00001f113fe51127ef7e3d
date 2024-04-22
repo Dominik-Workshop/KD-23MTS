@@ -365,14 +365,12 @@ int main(void)
 
 		  if(encoder_button_state == 0){
 			  encoder1 += -htim1.Instance->CNT;
+			  drawCursorsTime(timeDiv, 0, encoder1);
 			  LCD_Font(440, 67, "1", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 0, encoder1));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  }else{
 			  encoder2 += -htim1.Instance->CNT;
+			  drawCursorsTime(timeDiv, 1, encoder2);
 			  LCD_Font(440, 67, "2", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 1, encoder2));
-			  LCD_Font(440, 97, buf, _Open_Sans_Bold_12, 1, WHITE);
 		  }
 
 

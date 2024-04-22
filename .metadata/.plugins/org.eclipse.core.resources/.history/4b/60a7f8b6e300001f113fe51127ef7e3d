@@ -1,0 +1,24 @@
+#ifndef INC_CURSORS_H_
+#define INC_CURSORS_H_
+
+#include "main.h"
+#include "lcd.h"
+#include "tim.h"
+
+#define SCOPE_X 440
+#define GRIDS_X 10
+#define PX_PER_GRID_X SCOPE_X/GRIDS_X
+
+#define SCOPE_Y_OFFSET 32
+#define SCOPE_Y 208
+#define GRIDS_Y 6
+#define PX_PER_GRID_Y SCOPE_Y/GRIDS_Y
+
+int measureTime(uint32_t time_per_grid);
+int drawCursorsTime(uint32_t time_per_grid, uint8_t curs_num_flag);
+
+int measureVoltage(uint32_t voltage_per_grid);
+int drawCursorsVoltage(uint32_t volt_per_grid, uint8_t curs_num_flag);
+
+void resetCursors();
+#endif

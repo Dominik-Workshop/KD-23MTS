@@ -1,0 +1,76 @@
+23:34:38 **** Incremental Build of configuration Debug for project code ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/cursors.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32L476xx -DDEBUG -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../fonts -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/cursors.d" -MT"Core/Src/cursors.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/cursors.o"
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DUSE_HAL_DRIVER -DSTM32L476xx -DDEBUG -c -I../Core/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../fonts -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+In file included from ../Core/Src/cursors.c:1:0:
+../Core/Inc/cursors.h:18:15: warning: 'encoder_button_state' defined but not used [-Wunused-variable]
+ static int8_t encoder_button_state = 0;
+               ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c: In function 'drawMenu':
+../Core/Src/main.c:179:23: warning: passing argument 1 of 'drawImageTransparent' from incompatible pointer type [-Wincompatible-pointer-types]
+  drawImageTransparent(arrowUpDown, 447, 105, 8, 15);
+                       ^~~~~~~~~~~
+In file included from ../Core/Src/main.c:32:0:
+../Core/Inc/ili9488.h:158:6: note: expected 'const uint8_t * {aka const unsigned char *}' but argument is of type 'uint8_t (*)[8] {aka unsigned char (*)[8]}'
+ void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+      ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:182:23: warning: passing argument 1 of 'drawImageTransparent' from incompatible pointer type [-Wincompatible-pointer-types]
+  drawImageTransparent(arrowLeftRight, 443, 108 + 42, 15, 7);
+                       ^~~~~~~~~~~~~~
+In file included from ../Core/Src/main.c:32:0:
+../Core/Inc/ili9488.h:158:6: note: expected 'const uint8_t * {aka const unsigned char *}' but argument is of type 'uint8_t (*)[15] {aka unsigned char (*)[15]}'
+ void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+      ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:286:25: warning: passing argument 1 of 'drawImageTransparent' from incompatible pointer type [-Wincompatible-pointer-types]
+    drawImageTransparent(trigRisingIcon, 440, 5, 9, 15);
+                         ^~~~~~~~~~~~~~
+In file included from ../Core/Src/main.c:32:0:
+../Core/Inc/ili9488.h:158:6: note: expected 'const uint8_t * {aka const unsigned char *}' but argument is of type 'uint8_t (*)[9] {aka unsigned char (*)[9]}'
+ void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+      ^~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:416:49: warning: pointer targets in passing argument 1 of 'calculate_peak_to_peak' differ in signedness [-Wpointer-sign]
+    sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
+                                                 ^~~
+In file included from ../Core/Src/main.c:34:0:
+../Core/Inc/oscilloscope.h:34:5: note: expected 'int16_t * {aka short int *}' but argument is of type 'uint16_t * {aka short unsigned int *}'
+ int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]);
+     ^~~~~~~~~~~~~~~~~~~~~~
+../Core/Src/main.c:418:41: warning: pointer targets in passing argument 1 of 'calculate_RMS' differ in signedness [-Wpointer-sign]
+    sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
+                                         ^~~
+In file included from ../Core/Src/main.c:34:0:
+../Core/Inc/oscilloscope.h:35:5: note: expected 'int16_t * {aka short int *}' but argument is of type 'uint16_t * {aka short unsigned int *}'
+ int calculate_RMS(int16_t waveform[MEMORY_DEPTH]);
+     ^~~~~~~~~~~~~
+In file included from ../Core/Src/main.c:35:0:
+At top level:
+../Core/Inc/cursors.h:17:63: warning: 'voltage_cursor_2' defined but not used [-Wunused-variable]
+ static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
+                                                               ^~~~~~~~~~~~~~~~
+../Core/Inc/cursors.h:17:45: warning: 'voltage_cursor_1' defined but not used [-Wunused-variable]
+ static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
+                                             ^~~~~~~~~~~~~~~~
+../Core/Inc/cursors.h:17:30: warning: 'time_cursor_2' defined but not used [-Wunused-variable]
+ static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
+                              ^~~~~~~~~~~~~
+../Core/Inc/cursors.h:17:16: warning: 'time_cursor_1' defined but not used [-Wunused-variable]
+ static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
+                ^~~~~~~~~~~~~
+arm-none-eabi-gcc -o "code.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\Kamil\Documents\STM32_oscilloscope\code\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="code.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: code.elf
+ 
+arm-none-eabi-objdump -h -S  code.elf  > "code.list"
+arm-none-eabi-objcopy  -O binary  code.elf  "code.bin"
+arm-none-eabi-size   code.elf 
+   text	   data	    bss	    dec	    hex	filename
+  47428	    612	  79028	 127068	  1f05c	code.elf
+Finished building: default.size.stdout
+ 
+Finished building: code.bin
+ 
+Finished building: code.list
+ 
+
+23:34:41 Build Finished. 0 errors, 10 warnings. (took 3s.58ms)
+
