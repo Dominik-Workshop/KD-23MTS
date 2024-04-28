@@ -8,9 +8,8 @@
 #ifndef INC_LCD_H_
 #define INC_LCD_H_
 
-#include "main.h"
+#include "inttypes.h"
 #include "ili9488.h"
-#include "xpt2046.h"
 
 
 #define LCD_WIDTH 480

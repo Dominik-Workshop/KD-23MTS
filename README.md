@@ -11,30 +11,31 @@ Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
 ## Connections
 
 - LCD
-  | STM pin | Component pin |
-  |---------|---------------|
-  | PA6     | TFT_MISO      |
-  | PC9     | TFT_LED       |
-  | PB3     | TFT_SCK       |
-  | PA7     | TFT_MOSI      |
-  | PC4     | TFT_DC/RS     |
-  | PA10    | TFT_RESET     |
-  | PC8     | TFT_CS        |
+  | STM pin | Component pin | Signal description |
+  |---------|---------------|--------------------|
+  | PA6     | SDO(MISO)     | TFT_MISO           |
+  | PC9     | LED           | TFT_Backlight      |
+  | PB3     | SCK           | TFT_SCK            |
+  | PA7     | SDI(MOSI)     | TFT_MOSI           |
+  | PC4     | DC/RS         | TFT_DC/RS          |
+  | PA10    | RESET         | TFT_RESET          |
+  | PC8     | CS            | TFT_CS             |
 
 
 - Touchscreen
-  | STM pin | Component pin |
-  |---------|---------------|
-  | PC2     | Touch_MISO    |
-  | PC3     | Touch_MOSI    |
-  | PB10    | Touch_SCK     |
-  | PB12    | Touch_CS      |
+  | STM pin | Component pin | Signal description |
+  |---------|---------------|--------------------|
+  | -----   | T_IRQ         | T_IRQ              |
+  | PC2     | T_DO          | Touch_MISO         |
+  | PC3     | T_DIN         | Touch_MOSI         |
+  | PB12    | T_CS          | Touch_CS           |
+  | PB10    | T_CLK         | Touch_SCK          |
 
 - Rotary encoder
   | STM pin | Component pin |
   |---------|---------------|
   | PA9     | ENC_A         |
-  | PA9     | ENC_B         |
+  | PA8     | ENC_B         |
   | PC0     | ENC_BTN       |
 
 ## Used tools: 
