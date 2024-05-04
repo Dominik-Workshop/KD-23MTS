@@ -23,12 +23,14 @@
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdio.h>
 #include "oscilloscope.h"
-
+#include "stm32_adafruit_ts.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,7 +68,13 @@ void SystemClock_Config(void);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 	SPI1_TX_completed_flag = 1;
 }
+extern  TS_DrvTypeDef         *ts_drv;
+#define ts_calib()
 
+int _write(int file, char* ptr, int len){
+	HAL_UART_Transmit(&huart2, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+	return len;
+}
 /* USER CODE END 0 */
 
 /**
@@ -76,8 +84,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  Oscilloscope oscilloscope;
-  oscilloscopeInit(&oscilloscope);
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -104,6 +111,7 @@ int main(void)
   MX_TIM3_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
@@ -116,11 +124,17 @@ int main(void)
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
 
+  Oscilloscope oscilloscope;
+  oscilloscopeInit(&oscilloscope);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
+  TS_StateTypeDef ts;
+  BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
+  ts_calib();
   for(int i = 0; i < 480; ++i){
   		oscilloscope.ch2.waveform[i] = 0;
   }
@@ -131,12 +145,15 @@ int main(void)
   while (1){
 	  clearScreen();
 	  drawGrid();
-
 	  for(int i = 0; i < 480; ++i){
 		oscilloscope.ch1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  }
 	  faza++;
-
+	  //serveTouchScreen(&oscilloscope);
+	  BSP_TS_GetState(& ts);
+	  	  if(ts.TouchDetected){
+	  		fillRect(ts.X, ts.Y, 5, 5, RED);
+	  	  }
 	  if(oscilloscope.ch1.isOn)
 		  draw_waveform(& oscilloscope.ch1);
 	  drawChanellVperDev(0, & oscilloscope.ch1);
@@ -209,7 +226,8 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_ADC;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
   PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSI;
   PeriphClkInit.PLLSAI1.PLLSAI1M = 1;

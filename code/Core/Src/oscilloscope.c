@@ -10,9 +10,11 @@
 #include "sprites.h"
 #include "012_Open_Sans_Bold.h"
 #include "014_Open_Sans_Bold.h"
+
 #define _Open_Sans_Bold_12      &Open_Sans_Bold_12
 #define _Open_Sans_Bold_14      &Open_Sans_Bold_14
 
+void calibration(void);
 
 void oscilloscopeInit(Oscilloscope* osc){
 	oscilloscope_channel_init(&(osc->ch1), YELLOW);
@@ -24,8 +26,10 @@ void oscilloscopeInit(Oscilloscope* osc){
 
 	osc->ch2.y_scale_mV = 500;
 
-	BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
+	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
+	calibration();
+
 }
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
@@ -149,6 +153,13 @@ void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 	LCD_Font(x + 16, 312, buf, _Open_Sans_Bold_14, 1, BLACK);
 	sprintf(buf,"%dmV", ch->y_scale_mV);
 	LCD_Font(x + 42, 312, buf, _Open_Sans_Bold_14, 1, color);
+}
+
+void serveTouchScreen(Oscilloscope* osc){
+	BSP_TS_GetState(& osc->touchScreen);
+	  if(osc->touchScreen.TouchDetected){
+		fillRect(osc->touchScreen.X, osc->touchScreen.Y, 5, 5, RED);
+	  }
 }
 /*
 void serveTouchScreen(Oscilloscope* osc){
