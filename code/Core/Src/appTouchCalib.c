@@ -47,8 +47,8 @@ void touchScreenCalibration(void)
   ts_three_points tc, dc; /* touchscreen and display corrdinates */
   ts_cindex ci;
 
-  printf("\r\nPlease: set the LCD ORIENTATION to the value on which the program will run.\r\n");
-  Delay(100);
+  //printf("\r\nPlease: set the LCD ORIENTATION to the value on which the program will run.\r\n");
+  //Delay(100);
   printf("Press the screen at the yellow squares that appear,\r\n");
   Delay(100);
   printf("then paste the following line into stm32_adafruit_ts.h :\r\n");
