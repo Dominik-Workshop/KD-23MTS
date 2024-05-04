@@ -1,4 +1,5 @@
 #include "cursors.h"
+#include "ILI9488.h"
 //arm_map
 
 void resetCursors(){

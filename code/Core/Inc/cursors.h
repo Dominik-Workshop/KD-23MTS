@@ -2,7 +2,6 @@
 #define INC_CURSORS_H_
 
 #include "main.h"
-#include "lcd.h"
 #include "tim.h"
 
 #define SCOPE_X 420

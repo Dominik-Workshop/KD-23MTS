@@ -1,5 +1,5 @@
 /*
- * ILI9488.cpp
+ * ILI9488.c
  *
  *  Created on: Apr 29, 2021
  *      Author: hydra
@@ -89,9 +89,9 @@ uint8_t rotation;
 
 
 void ILI9488_Init(void){
-	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin, GPIO_PIN_RESET);
 	HAL_Delay(10);
-	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin, GPIO_PIN_SET);
 	_width=ILI9488_TFTWIDTH;
 	_height=ILI9488_TFTHEIGHT;
 
@@ -189,8 +189,8 @@ void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
 	writedata(y1 >> 8);
 	writedata(y1 & 0xff);        // YEND
 	writecommand(ILI9488_RAMWR); // write to RAM
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin, GPIO_PIN_SET);
 }
 
 
@@ -246,7 +246,7 @@ void pushColors(uint16_t *data, uint8_t len, uint8_t first){
  * @brief Draws image (img[h][w]) to a buffer
  *
  */
-void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+void drawImageTransparent(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t* img){
 
 	if ((x >= _width) || (y >= _height))
 		return;
@@ -259,6 +259,28 @@ void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w
 	    for (uint16_t o = 0; o < w; o++) {
 	        if (img[i * w + o] != BLACK) {
 	            drawPixel(x + o, y + i, img[i * w + o]);
+	        }
+	    }
+	}
+}
+
+/**
+ * @brief Draws image (img[h][w]) to a buffer with every non black pixel colored to given color
+ *
+ */
+void drawImageTransparentColored(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t* img, uint8_t color){
+
+	if ((x >= _width) || (y >= _height))
+		return;
+	if ((x + w - 1) >= _width)
+		w = _width - x;
+	if ((y + h - 1) >= _height)
+		h = _height - y;
+
+	for (uint16_t i = 0; i < h; i++) {
+	    for (uint16_t o = 0; o < w; o++) {
+	        if (img[i * w + o] != BLACK) {
+	            drawPixel(x + o, y + i, color);
 	        }
 	    }
 	}
