@@ -3,6 +3,12 @@
  *
  *  Created on: Apr 29, 2021
  *      Author: hydra
+ *
+ * 	Modified by:
+ * 		Dominik Workshop, Eryk Możdżeń
+ * 		8.04.2024
+ *
+ * 		Added image buffer
  */
 
 #ifndef ILI9488_H_

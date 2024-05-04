@@ -1,5 +1,5 @@
 /*
- * ILI9488.cpp
+ * ILI9488.c
  *
  *  Created on: Apr 29, 2021
  *      Author: hydra
@@ -89,9 +89,9 @@ uint8_t rotation;
 
 
 void ILI9488_Init(void){
-	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin, GPIO_PIN_RESET);
 	HAL_Delay(10);
-	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(TFT_RST_GPIO_Port,TFT_RST_Pin, GPIO_PIN_SET);
 	_width=ILI9488_TFTWIDTH;
 	_height=ILI9488_TFTHEIGHT;
 
@@ -189,8 +189,8 @@ void setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
 	writedata(y1 >> 8);
 	writedata(y1 & 0xff);        // YEND
 	writecommand(ILI9488_RAMWR); // write to RAM
-	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin,GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(TFT_CS_GPIO_Port,TFT_CS_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(TFT_DC_GPIO_Port,TFT_DC_Pin, GPIO_PIN_SET);
 }
 
 

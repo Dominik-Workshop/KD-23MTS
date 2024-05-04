@@ -27,50 +27,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "ts.h"
-#include "stm32_adafruit_ts.h"
-#include "ili9488.h"
-#include "stdio.h"
 #include "oscilloscope.h"
-#include "cursors.h"
-#include "008_Open_Sans_Bold.h"
-#include "009_Open_Sans_Bold.h"
-#include "010_Open_Sans_Bold.h"
-#include "012_Open_Sans_Bold.h"
-#include "014_Open_Sans_Bold.h"
-#include "016_Open_Sans_Bold.h"
-#include "018_Open_Sans_Bold.h"
-#include "020_Open_Sans_Bold.h"
-#include "022_Open_Sans_Bold.h"
-#include "024_Open_Sans_Bold.h"
-#include "026_Open_Sans_Bold.h"
-#include "028_Open_Sans_Bold.h"
-#include "036_Open_Sans_Bold.h"
-#include "048_Open_Sans_Bold.h"
-#include "072_Open_Sans_Bold.h"
-#include "096_Open_Sans_Bold.h"
-#include "112_Open_Sans_Bold.h"
-#include "128_Open_Sans_Bold.h"
-
-#define _Open_Sans_Bold_8      &Open_Sans_Bold_8
-#define _Open_Sans_Bold_9      &Open_Sans_Bold_9
-#define _Open_Sans_Bold_10     &Open_Sans_Bold_10
-#define _Open_Sans_Bold_11     &Open_Sans_Bold_11
-#define _Open_Sans_Bold_12      &Open_Sans_Bold_12
-#define _Open_Sans_Bold_14      &Open_Sans_Bold_14
-#define _Open_Sans_Bold_16      &Open_Sans_Bold_16
-#define _Open_Sans_Bold_18      &Open_Sans_Bold_18
-#define _Open_Sans_Bold_20      &Open_Sans_Bold_20
-#define _Open_Sans_Bold_22      &Open_Sans_Bold_22
-#define _Open_Sans_Bold_24      &Open_Sans_Bold_24
-#define _Open_Sans_Bold_26      &Open_Sans_Bold_26
-#define _Open_Sans_Bold_28      &Open_Sans_Bold_28
-#define _Open_Sans_Bold_36      &Open_Sans_Bold_36
-#define _Open_Sans_Bold_48      &Open_Sans_Bold_48
-#define _Open_Sans_Bold_72      &Open_Sans_Bold_72
-#define _Open_Sans_Bold_96      &Open_Sans_Bold_96
-#define _Open_Sans_Bold_112      &Open_Sans_Bold_112
-#define _Open_Sans_Bold_128      &Open_Sans_Bold_128
 
 /* USER CODE END Includes */
 
@@ -94,59 +51,7 @@
 
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
-
-
 static int conv_done = 0;
-
-uint8_t trigRisingIcon[15][9] = {
-    {0     , 0     , 0     , 0     , WHITE , WHITE , WHITE , WHITE , WHITE},
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0     },
-    {0     , 0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0     },
-    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
-    {WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0     , 0     , 0     }
-};
-
-
-uint8_t arrowUpDown[15][8] = {
-    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0},
-    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
-	{0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
-    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0},
-    {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
-    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0}
-};
-
-uint8_t arrowLeftRight[7][15] = {
-    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0},
-    {0     , 0     , WHITE , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , WHITE , 0     , 0},
-    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
-    {WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE},
-    {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},
-    {0     , 0     , WHITE , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , WHITE , 0     , 0},
-    {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0}
-};
-
-
-
 
 /* USER CODE END PV */
 
@@ -158,66 +63,10 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
-{
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 	SPI1_TX_completed_flag = 1;
 }
-extern  TS_DrvTypeDef         *ts_drv;
-#define ts_calib()
 
-void drawMenu(uint8_t color){
-	drawRectangleRoundedFrame(423, 32, 56, 253, color);
-
-	if(color == YELLOW)
-		LCD_Font(437, 45, "CH 1", _Open_Sans_Bold_12, 1, color);
-	else
-		LCD_Font(437, 45, "CH 2", _Open_Sans_Bold_12, 1, color);
-
-	LCD_Font(433, 74, "Scale", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 50, 52, 40, color);
-
-	drawImageTransparent(arrowUpDown, 447, 105, 8, 15);
-	drawRectangleRoundedFrame(425, 92, 52, 40, color);
-
-	drawImageTransparent(arrowLeftRight, 443, 108 + 42, 15, 7);
-	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
-}
-
-void drawMainMenu(uint8_t color){
-	drawRectangleRoundedFrame(423, 32, 56, 253, color);
-
-	LCD_Font(433, 45, "Menu", _Open_Sans_Bold_12, 1, color);
-
-	LCD_Font(428, 74, "Cursor", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 50, 52, 40, color);
-
-	LCD_Font(438, 74+42, "FFT", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 92, 52, 40, color);
-
-	LCD_Font(426, 74+84, "Measur", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
-}
-
-void drawCursorsMenu(uint8_t color){
-	drawRectangleRoundedFrame(423, 32, 56, 253, color);
-
-	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, color);
-
-	LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 50, 52, 40, color);
-
-	drawImageTransparent(arrowLeftRight, 443, 112, 15, 7);
-	drawRectangleRoundedFrame(425, 92, 52, 40, color);
-
-	drawImageTransparent(arrowUpDown, 447, 108 + 40, 8, 15);
-	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
-
-
-
-
-}
-
-void mainApp(void);
 /* USER CODE END 0 */
 
 /**
@@ -227,13 +76,8 @@ void mainApp(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  oscilloscope_channel CH1;
-  oscilloscope_channel_init(&CH1, YELLOW);
-
-  oscilloscope_channel CH2;
-  oscilloscope_channel_init(&CH2, BLUE);
-
-  char buf[20];						// buffer for measurements to be displayed
+  Oscilloscope oscilloscope;
+  oscilloscopeInit(&oscilloscope);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -277,202 +121,29 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
-
-  TS_StateTypeDef ts;
-  BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
-  ts_calib();
-
   for(int i = 0; i < 480; ++i){
-  		CH2.waveform[i] = 0;
+  		oscilloscope.ch2.waveform[i] = 0;
   }
   for(int i = 200; i < 350; ++i){
-    		CH2.waveform[i] = 3000;
+	  oscilloscope.ch2.waveform[i] = 3000;
   }
 
-  uint8_t color = YELLOW;
-  uint8_t color2 = GREY;
-
-  uint8_t changed_var = 0;
-  uint16_t timeDiv = 100;
-  uint16_t trigger = 140;
-  uint16_t voltDiv = 1;
-  uint64_t prevTime = HAL_GetTick();
-  int16_t encoder1 = 200;
-  int16_t encoder2 = 100;
-  int16_t encoder3 = 200;
-  int16_t encoder4 = 100;
-
   while (1){
-
 	  clearScreen();
 	  drawGrid();
-	  drawImageTransparent(trigRisingIcon, 440, 5, 9, 15);
-
-	  sprintf(buf,"%d", trigger);
-	  LCD_Font(453, 17, buf, _Open_Sans_Bold_12, 1, WHITE);
-
-	  BSP_TS_GetState(&ts);
-	  	  if(ts.TouchDetected){
-
-	  	  	  fillRect(ts.X, ts.Y, 5, 5, RED);
-	  	  	  if(ts.X < 110 && ts.X > 0 && ts.Y < 320 && ts.Y > 290){	// CH1
-	  	  		  if(HAL_GetTick() - prevTime > 1000){
-	  	  			  prevTime = HAL_GetTick();
-	  	  			  if(changed_var == 0){
-						  if(color == GREY){
-							color = YELLOW;
-						  }
-						  else
-							color = GREY;
-	  	  			  }
-	  	  			  changed_var = 0;
-	  	  		  }
-	  	  	  }
-	  	  	  else if(ts.X < 220 && ts.X > 110 && ts.Y < 320 && ts.Y > 290){	//CH2
-	  	  		if(HAL_GetTick() - prevTime > 1000){
-	  	  			prevTime = HAL_GetTick();
-	  	  			if(changed_var == 1){
-					  if(color2 == GREY){
-						color2 = BLUE;
-					  }
-					  else
-						color2 = GREY;
-	  	  			}
-	  	  			changed_var = 1;
-	  	  		}
-			  }
-	  	  	  else if(ts.X < 70  && ts.Y < 25){			// Time per division
-	  	  			changed_var = 2;
-	  	  	  }
-	  	  	  else if(ts.X > 440 && ts.Y < 25){			// trigger
-					changed_var = 3;
-			  }else if(ts.X > 425 && ts.Y < 90 && ts.Y > 50){
-				  if(changed_var == 10){
-					  changed_var = 11;
-
-				  }
-
-			  }else if(ts.X > 425 && ts.Y < 174 && ts.Y > 134){
-				  if(changed_var == 11){
-				  					  changed_var = 12;
-
-				  				  }
-			  }
-
-			  else
-				  changed_var = 10;
-	  	  }
-
-
-	  switch(changed_var){
-	  case 0:
-		  CH1.x_offset += -htim1.Instance->CNT;
-		  //fillRect(470, 310, 10, 10, CH1.color);
-		  drawMenu(CH1.color);
-		  break;
-	  case 1:
-		  CH2.x_offset += -htim1.Instance->CNT;
-		  //fillRect(470, 310, 10, 10, CH2.color);
-		  drawMenu(CH2.color);
-		  break;
-	  case 2:
-		  timeDiv += -htim1.Instance->CNT;
-		  if((HAL_GetTick()%1000) > 500)
-		  	  drawRectangleRoundedFrame(3, 3, 70, 22, GREY);
-		  break;
-	  case 3:
-		  trigger += -htim1.Instance->CNT;
-		  drawFastHLine(0, 291 - trigger, 420, RED);
-		  break;
-	  case 11:
-		  drawCursorsMenu(WHITE);
-		  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin)==0){
-			  if(encoder_button_state == 0){
-				  encoder_button_state = 1;
-			  }else{
-				  encoder_button_state = 0;
-			  }
-		  }
-
-		  if(encoder_button_state == 0){
-			  encoder1 += -htim1.Instance->CNT;
-			  LCD_Font(440, 220, "1", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 0, encoder1));
-			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
-		  }else{
-			  encoder2 += -htim1.Instance->CNT;
-			  LCD_Font(440, 220, "2", _Open_Sans_Bold_12, 1, WHITE);
-			  sprintf(buf,"%d", drawCursorsTime(timeDiv, 1, encoder2));
-			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
-		  }
-
-		  break;
-	  case 12:
-	  		  drawCursorsMenu(YELLOW);
-	  		  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin)==0){
-	  			  if(encoder_button_state == 0){
-	  				  encoder_button_state = 1;
-	  			  }else{
-	  				  encoder_button_state = 0;
-	  			  }
-	  		  }
-
-	  		  if(encoder_button_state == 0){
-	  			  encoder3 += -htim1.Instance->CNT;
-	  			  LCD_Font(440, 220, "1", _Open_Sans_Bold_12, 1, WHITE);
-	  			  sprintf(buf,"%d", drawCursorsVoltage(voltDiv *1000, 0, encoder3));
-	  			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
-	  		  }else{
-	  			  encoder4 += -htim1.Instance->CNT;
-	  			  LCD_Font(440, 220, "2", _Open_Sans_Bold_12, 1, WHITE);
-	  			  sprintf(buf,"%d", drawCursorsVoltage(voltDiv *1000, 1, encoder4));
-	  			  LCD_Font(440, 240, buf, _Open_Sans_Bold_12, 1, WHITE);
-	  		  }
-
-	  		  break;
-	  case 10:
-		  drawMainMenu(WHITE);
-		  break;
-	  }
-	  htim1.Instance->CNT=0;
 
 	  for(int i = 0; i < 480; ++i){
-		CH1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
+		oscilloscope.ch1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  }
 	  faza++;
 
-	  if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
-		  switch(changed_var){
-		  	  case 0:
-		  		  CH1.x_offset = 0;
-		  		  break;
-		  	  case 1:
-		  		  CH2.x_offset = 0;
-		  		  break;
-		  }
-	  }
+	  if(oscilloscope.ch1.isOn)
+		  draw_waveform(& oscilloscope.ch1);
+	  drawChanellVperDev(0, & oscilloscope.ch1);
 
-	  if(color == YELLOW)
-		  draw_waveform(& CH1);
-
-	  if(color2 == BLUE)
-		  draw_waveform(& CH2);
-
-	  sprintf(buf,"H %dms", timeDiv);
-	  LCD_Font(8, 19, buf, _Open_Sans_Bold_12  , 1, WHITE);
-
-	  sprintf(buf,"Vpp=%d", calculate_peak_to_peak(CH1.waveform));
-	  LCD_Font(250+5, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);
-	  sprintf(buf,"Vrms=%d", calculate_RMS(CH1.waveform));
-	  LCD_Font(250+80, 312, buf, _Open_Sans_Bold_12  , 1, YELLOW);
-
-	  drawChanellVperDev(0, color);
-	  LCD_Font(16, 312, "1", _Open_Sans_Bold_14, 1, BLACK);
-	  LCD_Font(48, 312, "1.00V", _Open_Sans_Bold_14, 1, color);
-
-	  drawChanellVperDev(110, color2);
-	  LCD_Font(16+110, 312, "2", _Open_Sans_Bold_14, 1, BLACK);
-	  LCD_Font(48+110, 312, "1.00V", _Open_Sans_Bold_14, 1, color2);
+	  if(oscilloscope.ch2.isOn)
+		  draw_waveform(& oscilloscope.ch2);
+	  drawChanellVperDev(110, & oscilloscope.ch2);
 
 	  imageRender();
 
@@ -491,17 +162,6 @@ int main(void)
 	  }
 	  */
 
-	  //    CODE FOR TOUCH
-	  /*
-	  //char buf[20];
-	  //LCD_Font(25, 25, buf1, _Open_Sans_Bold_24  , 1, WHITE);
-	  touchX = getX();
-	  touchY = getY();
-	  //sprintf(buf,"x=%3d y=%3d",touchX,touchY);
-	  //sprintf(buf1,"x=%3d y=%3d",touchX,touchY);
-	  //LCD_Font(25, 25, buf, _Open_Sans_Bold_24  , 1, BLACK);
-	  fillRect(touchX, touchY,7,7, RED);
-	  */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
