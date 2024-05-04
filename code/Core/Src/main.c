@@ -30,7 +30,7 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "oscilloscope.h"
-#include "stm32_adafruit_ts.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -68,9 +68,7 @@ void SystemClock_Config(void);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 	SPI1_TX_completed_flag = 1;
 }
-extern  TS_DrvTypeDef         *ts_drv;
-#define ts_calib()
-
+// Function redirecting printf() to UART
 int _write(int file, char* ptr, int len){
 	HAL_UART_Transmit(&huart2, (uint8_t *)ptr, len, HAL_MAX_DELAY);
 	return len;
@@ -132,9 +130,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   int faza = 0;
-  TS_StateTypeDef ts;
-  BSP_TS_Init(ILI9488_TFTHEIGHT,ILI9488_TFTWIDTH);
-  ts_calib();
+
   for(int i = 0; i < 480; ++i){
   		oscilloscope.ch2.waveform[i] = 0;
   }
@@ -145,15 +141,16 @@ int main(void)
   while (1){
 	  clearScreen();
 	  drawGrid();
+
 	  for(int i = 0; i < 480; ++i){
 		oscilloscope.ch1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  }
 	  faza++;
-	  //serveTouchScreen(&oscilloscope);
-	  BSP_TS_GetState(& ts);
-	  	  if(ts.TouchDetected){
-	  		fillRect(ts.X, ts.Y, 5, 5, RED);
-	  	  }
+
+	  displayTimeBase(&oscilloscope);
+	  serveTouchScreen(&oscilloscope);
+	  serveEncoder(&oscilloscope);
+
 	  if(oscilloscope.ch1.isOn)
 		  draw_waveform(& oscilloscope.ch1);
 	  drawChanellVperDev(0, & oscilloscope.ch1);
@@ -161,6 +158,8 @@ int main(void)
 	  if(oscilloscope.ch2.isOn)
 		  draw_waveform(& oscilloscope.ch2);
 	  drawChanellVperDev(110, & oscilloscope.ch2);
+
+	  drawMeasurements(&oscilloscope);
 
 	  imageRender();
 

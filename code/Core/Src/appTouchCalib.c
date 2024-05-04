@@ -41,7 +41,7 @@ void touchcalib_drawBox(int32_t x, int32_t y, uint16_t cl)
 }
 
 //-----------------------------------------------------------------------------
-void calibration(void)
+void touchScreenCalibration(void)
 {
   uint16_t tx, ty;
   ts_three_points tc, dc; /* touchscreen and display corrdinates */

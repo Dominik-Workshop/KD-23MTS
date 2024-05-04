@@ -246,7 +246,7 @@ void pushColors(uint16_t *data, uint8_t len, uint8_t first){
  * @brief Draws image (img[h][w]) to a buffer
  *
  */
-void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h){
+void drawImageTransparent(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t* img){
 
 	if ((x >= _width) || (y >= _height))
 		return;
@@ -259,6 +259,28 @@ void drawImageTransparent(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w
 	    for (uint16_t o = 0; o < w; o++) {
 	        if (img[i * w + o] != BLACK) {
 	            drawPixel(x + o, y + i, img[i * w + o]);
+	        }
+	    }
+	}
+}
+
+/**
+ * @brief Draws image (img[h][w]) to a buffer with every non black pixel colored to given color
+ *
+ */
+void drawImageTransparentColored(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t* img, uint8_t color){
+
+	if ((x >= _width) || (y >= _height))
+		return;
+	if ((x + w - 1) >= _width)
+		w = _width - x;
+	if ((y + h - 1) >= _height)
+		h = _height - y;
+
+	for (uint16_t i = 0; i < h; i++) {
+	    for (uint16_t o = 0; o < w; o++) {
+	        if (img[i * w + o] != BLACK) {
+	            drawPixel(x + o, y + i, color);
 	        }
 	    }
 	}
