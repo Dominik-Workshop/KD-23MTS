@@ -45,6 +45,9 @@ enum Selection{
 	SelectionTRIGGER,
 	SelectionMAIN_MENU,
 	SelectionCURSORS,
+	SelectionCURSORS_CHANGE_CHANNEL,
+	SelectionCURSORS_VERTICAL,
+	SelectionCURSORS_HORIZONTAL,
 	SelectionFFT,
 	SelectionMEASUREMENTS,
 	Idle
@@ -60,6 +63,26 @@ enum ClickedItem{
 	ClickedFFT,
 	Nothing
 };
+
+enum ActiveCursorChannel{
+	CursorChannel_1,
+	CursorChannel_2
+};
+
+enum ActiveCursorType{
+	CursorType_VERTICAL,
+	CursorType_HORIZONTAL,
+	CursorType_DISABLE
+};
+
+typedef struct cursors{
+
+	int32_t vertical_cursor_1;
+	int32_t vertical_cursor_2;
+	int32_t horizontal_cursor_1;
+	int32_t horizontal_cursor_2;
+
+}Channel_cursors;
 
 typedef struct osc_ch{
 	uint16_t waveform[MEMORY_DEPTH];				// all samples
@@ -77,7 +100,13 @@ typedef struct osc_ch{
 
 	enum ChangedParameter changedParameter;
 
+	Channel_cursors cursors;
+
+
 }Oscilloscope_channel;
+
+
+
 
 typedef struct osc{
 	Oscilloscope_channel ch1;
@@ -91,6 +120,10 @@ typedef struct osc{
 
 	uint32_t timeBaseArray[22];
 	int8_t timeBaseIndex;
+
+	enum ActiveCursorChannel active_cursor_channel;
+	enum ActiveCursorType active_cursor_type;
+
 }Oscilloscope;
 
 void oscilloscopeInit(Oscilloscope* osc);
@@ -113,7 +146,16 @@ void serveEncoder(Oscilloscope* osc);
 
 void drawMenu(Oscilloscope_channel* ch);
 void drawMainMenu(uint8_t color);
-void drawCursorsMenu(uint8_t color);
+
+
+void drawCursorsMenu(enum ActiveCursorChannel active_cursor_channel, enum ActiveCursorType active_cursor_type);
+void changeActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel);
+//void disableActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel);
+
+void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type);
+
+
+
 void drawFFTMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);
 

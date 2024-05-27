@@ -32,6 +32,10 @@ void oscilloscopeInit(Oscilloscope* osc){
 
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
+
+
+	osc -> active_cursor_channel = CursorChannel_1;
+	osc -> active_cursor_type = CursorType_DISABLE;
 	//touchScreenCalibration();
 }
 
@@ -42,6 +46,10 @@ void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
 	ch->color = color;
 	ch->isOn = 0;
 	ch->changedParameter = VerticalScale;
+	ch->cursors.vertical_cursor_1 = 100;
+	ch->cursors.vertical_cursor_2 = 200;
+	ch->cursors.horizontal_cursor_1 = 100;
+	ch->cursors.horizontal_cursor_2 = 200;
 }
 
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
@@ -238,6 +246,18 @@ void serveTouchScreen(Oscilloscope* osc){
 			//}
 		}
 
+		else if(osc ->selection == SelectionCURSORS){
+			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (50+40) && osc->touchScreen.Y > 50){
+				osc -> selection = SelectionCURSORS_CHANGE_CHANNEL;
+			}
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
+				osc -> selection = SelectionCURSORS_VERTICAL;
+			}
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (130+40) && osc->touchScreen.Y > 130){
+				osc -> selection = SelectionCURSORS_HORIZONTAL;
+			}
+		}
+
 	}else
 		osc->clickedItem = Nothing;
 
@@ -252,7 +272,21 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawMainMenu(LIGHT_GREEN);
 		break;
 	case SelectionCURSORS:
-		drawCursorsMenu(WHITE);
+		drawCursorsMenu(osc-> active_cursor_channel, osc -> active_cursor_type);
+		break;
+	case SelectionCURSORS_CHANGE_CHANNEL:
+		//zmien kanal kursora
+		changeActiveCursorChannel(& osc -> active_cursor_channel);
+		osc -> selection = SelectionCURSORS;
+		break;
+	case SelectionCURSORS_VERTICAL:
+		//rysuj kursor pionowy
+		setActiveCursorType(CursorType_VERTICAL, & osc -> active_cursor_type);
+		osc -> selection = SelectionCURSORS;
+		break;
+	case SelectionCURSORS_HORIZONTAL:
+		setActiveCursorType(CursorType_HORIZONTAL, & osc -> active_cursor_type);
+		osc -> selection = SelectionCURSORS;
 		break;
 	case SelectionFFT:
 		drawFFTMenu(osc);
@@ -360,19 +394,63 @@ void drawMainMenu(uint8_t color){
 	//drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
 }
 
-void drawCursorsMenu(uint8_t color){
-	drawRectangleRoundedFrame(423, 32, 56, 253, color);
+void changeActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
+	if(* active_cursor_channel == CursorChannel_1){
+		* active_cursor_channel = CursorChannel_2;
+	}else if(* active_cursor_channel == CursorChannel_2){
+		* active_cursor_channel = CursorChannel_1;
+	}
+}
 
-	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, color);
+/*void disableActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
+	* active_cursor_channel = CursorChannel_DISABLE;
+}*/
 
-	LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, color);
-	drawRectangleRoundedFrame(425, 50, 52, 40, color);
+void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type){
+	* osc_active_cursor_type = cursor_type_to_set;
+}
 
-	drawImageTransparent(arrowLeftRight, 443, 112, 15, 7);
-	drawRectangleRoundedFrame(425, 92, 52, 40, color);
 
-	drawImageTransparent(arrowUpDown, 447, 108 + 40, 8, 15);
-	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
+void drawCursorsMenu(enum ActiveCursorChannel active_cursor_channel, enum ActiveCursorType active_cursor_type){
+
+
+	drawRectangleRoundedFrame(423, 32, 56, 253, WHITE);
+
+	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
+
+	drawRectangleRoundedFrame(425, 50, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 92, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 134, 52, 40, WHITE);
+
+	//LCD_Font(430, 220, "meas", _Open_Sans_Bold_12, 1, WHITE);
+
+	drawRectangleRoundedFrame(425, 243, 52, 40, WHITE);
+
+	if(active_cursor_channel == CursorChannel_1){
+		LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, YELLOW);
+	}else if(active_cursor_channel == CursorChannel_2){
+		LCD_Font(432, 74, "Ch 2", _Open_Sans_Bold_12, 1, BLUE);
+	}
+
+
+
+	if(active_cursor_type == CursorType_DISABLE){
+		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+		LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
+	}else if(active_cursor_type == CursorType_VERTICAL){
+		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, WHITE);
+		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+		LCD_Font(436, 235, "time", _Open_Sans_Bold_12, 1, WHITE);
+	}else if(active_cursor_type == CursorType_HORIZONTAL){
+		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, WHITE);
+		LCD_Font(426, 235, "voltage", _Open_Sans_Bold_12, 1, WHITE);
+	}
+
+
+
+
 
 }
 
