@@ -62,8 +62,6 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define ENC_BTN_Pin GPIO_PIN_0
 #define ENC_BTN_GPIO_Port GPIOC
-#define CH1_Pin GPIO_PIN_1
-#define CH1_GPIO_Port GPIOC
 #define TS_MISO_Pin GPIO_PIN_2
 #define TS_MISO_GPIO_Port GPIOC
 #define TS_MOSI_Pin GPIO_PIN_3

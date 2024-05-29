@@ -8,7 +8,7 @@
 #include "sprites.h"
 #include "ILI9488.h"
 
-uint8_t trigRisingIcon[15][9] = {
+const uint8_t trigRisingIcon[15][9] = {
     {0     , 0     , 0     , 0     , WHITE , WHITE , WHITE , WHITE , WHITE},
     {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
     {0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     },
@@ -26,7 +26,7 @@ uint8_t trigRisingIcon[15][9] = {
     {WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0     , 0     , 0     }
 };
 
-uint8_t arrowUpDown[15][8] = {
+const uint8_t arrowUpDown[15][8] = {
     {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0},
     {0     , 0     , WHITE , WHITE , WHITE , 0     , 0     , 0},
     {0     , WHITE , WHITE , WHITE , WHITE , WHITE , 0     , 0},
@@ -44,7 +44,7 @@ uint8_t arrowUpDown[15][8] = {
     {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0}
 };
 
-uint8_t arrowLeftRight[7][15] = {
+const uint8_t arrowLeftRight[7][15] = {
     {0     , 0     , 0     , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , 0     , 0     , 0},
     {0     , 0     , WHITE , WHITE , 0     , 0     , 0     , 0     , 0     , 0     , 0     , WHITE , WHITE , 0     , 0},
     {0     , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , WHITE , 0},

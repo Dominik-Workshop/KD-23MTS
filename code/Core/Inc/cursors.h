@@ -13,7 +13,7 @@
 #define GRIDS_Y 6
 #define PX_PER_GRID_Y  42//SCOPE_Y/GRIDS_Y
 
-//static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
+static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
 static int8_t encoder_button_state = 0;
 
 int measureTime(uint32_t time_per_grid);
@@ -24,5 +24,5 @@ int drawCursorsVoltage(int32_t volt_per_grid, uint8_t curs_num_flag, int32_t enc
 
 
 
-//void resetCursors();
+void resetCursors();
 #endif

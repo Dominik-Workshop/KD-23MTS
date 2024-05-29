@@ -20,6 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "comp.h"
+#include "dac.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -40,7 +42,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DAC_VREF 3.3
+#define DAC_RESOLUTION 4096
 
 /* USER CODE END PD */
 
@@ -54,6 +57,10 @@
 /* USER CODE BEGIN PV */
 volatile uint8_t SPI1_TX_completed_flag = 1;
 static int conv_done = 0;
+int ready_to_draw = 0;
+volatile int done_drawing = 1;
+Oscilloscope oscilloscope;
+
 
 /* USER CODE END PV */
 
@@ -68,10 +75,30 @@ void SystemClock_Config(void);
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 	SPI1_TX_completed_flag = 1;
 }
-// Function redirecting printf() to UART
+
+void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
+	if(conv_done & done_drawing){
+		conv_done = 0;
+		HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+		ready_to_draw = 1;
+		done_drawing = 0;
+	}
+}
+
+/**
+ * @brief function for printing using UART
+ */
 int _write(int file, char* ptr, int len){
 	HAL_UART_Transmit(&huart2, (uint8_t *)ptr, len, HAL_MAX_DELAY);
 	return len;
+}
+
+/**
+ * @brief convert voltage to DAC value
+ */
+int conv_voltage_to_DAC(double voltage){
+	int dac = voltage*DAC_RESOLUTION/DAC_VREF;
+	return (int) dac;
 }
 /* USER CODE END 0 */
 
@@ -110,9 +137,14 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
+  MX_DAC1_Init();
+  MX_COMP1_Init();
   /* USER CODE BEGIN 2 */
 
-  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) CH1.waveform , MEMORY_DEPTH);
+  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
+  HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
+  HAL_COMP_Start(&hcomp1);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
@@ -122,7 +154,6 @@ int main(void)
   setRotation(1);
   ILI9341_Fill_Screen(ILI9488_BLACK);
 
-  Oscilloscope oscilloscope;
   oscilloscopeInit(&oscilloscope);
 
   /* USER CODE END 2 */
@@ -132,27 +163,35 @@ int main(void)
   int faza = 0;
 
   for(int i = 0; i < 480; ++i){
-  		oscilloscope.ch2.waveform[i] = 0;
+  		oscilloscope.ch2.waveform_raw_adc[i] = 0;
   }
   for(int i = 200; i < 350; ++i){
-	  oscilloscope.ch2.waveform[i] = 3000;
+	  oscilloscope.ch2.waveform_raw_adc[i] = 3000;
   }
 
   while (1){
 	  clearScreen();
 	  drawGrid();
 
-	  for(int i = 0; i < 480; ++i){
+	  /*for(int i = 0; i < 480; ++i){
 		oscilloscope.ch1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
 	  }
 	  faza++;
+	  */
 
 	  displayTimeBase(&oscilloscope);
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
 
-	  if(oscilloscope.ch1.isOn)
-		  draw_waveform(& oscilloscope.ch1);
+	  if(oscilloscope.ch1.isOn){
+		  if(ready_to_draw){
+			  draw_waveform(& oscilloscope.ch1);
+			  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+			  ready_to_draw = 0;
+			  done_drawing = 1;
+		  }
+	  }
+		  //draw_waveform(& oscilloscope.ch1);
 	  drawChanellVperDev(0, & oscilloscope.ch1);
 
 	  if(oscilloscope.ch2.isOn)
@@ -160,6 +199,8 @@ int main(void)
 	  drawChanellVperDev(110, & oscilloscope.ch2);
 
 	  drawMeasurements(&oscilloscope);
+	  drawRunStop(&oscilloscope);
+	  drawTriggerIcon(&oscilloscope);
 
 	  imageRender();
 

@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "oscilloscope.h"
 #include "sprites.h"
+#include "memory.h"
 #include "012_Open_Sans_Bold.h"
 #include "014_Open_Sans_Bold.h"
 
@@ -27,15 +28,18 @@ void oscilloscopeInit(Oscilloscope* osc){
 	osc->clickedItem = Nothing;
 	osc->ch2.y_scale_mV = 500;
 	osc->timeBaseIndex = 9;
+	osc->ch1.y_scale_mVIndex = 6;
+	osc->ch2.y_scale_mVIndex = 6;
+	osc->ch2.y_scale_mV = 1000;
+	osc->stop = 0;
+	uint32_t y_scale_mVArray[] = {10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000};
+	memcpy(osc->ch1.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
+	memcpy(osc->ch2.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
 	uint32_t timeBaseArray[] = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
-
-
-	osc -> active_cursor_channel = CursorChannel_1;
-	osc -> active_cursor_type = CursorType_DISABLE;
 	//touchScreenCalibration();
 }
 
@@ -46,10 +50,6 @@ void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
 	ch->color = color;
 	ch->isOn = 0;
 	ch->changedParameter = VerticalScale;
-	ch->cursors.vertical_cursor_1 = 100;
-	ch->cursors.vertical_cursor_2 = 200;
-	ch->cursors.horizontal_cursor_1 = 100;
-	ch->cursors.horizontal_cursor_2 = 200;
 }
 
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
@@ -58,10 +58,32 @@ void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
 	else
 		ch->isOn = 1;
 }
+/*
+int calculate_peak_to_peak(uint32_t waveform[LCD_WIDTH]){
+	uint32_t max=0, min=4294967295;
+	for(int i = 0; i < LCD_WIDTH; ++i){
+		if(waveform[i]<min)
+			min=waveform[i];
+		if(waveform[i]>max)
+			max=waveform[i];
+	}
+	return (int)(max-min);
+}
 
-int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
-	uint32_t max=0, min=4096;
-	for(int i = 0; i < MEMORY_DEPTH; ++i){
+int calculate_RMS(uint32_t waveform[LCD_WIDTH]) {
+    int64_t sum_of_squares = 0;
+    for (int i = 0; i < LCD_WIDTH; ++i) {
+        sum_of_squares += (int32_t)waveform[i] * waveform[i];
+    }
+    double mean_of_squares = (double)sum_of_squares / LCD_WIDTH;
+    double rms = sqrt(mean_of_squares);
+    return (int)rms;
+}*/
+
+int calculate_peak_to_peak(uint16_t waveform[LCD_WIDTH]){
+	uint16_t max=0, min;
+	min = 50000;
+	for(int i = 0; i < LCD_WIDTH; ++i){
 		if(waveform[i]<min)
 			min=waveform[i];
 		if(waveform[i]>max)
@@ -70,12 +92,12 @@ int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
 	return max-min;
 }
 
-int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
+int calculate_RMS(uint16_t waveform[LCD_WIDTH]) {
     int64_t sum_of_squares = 0;
-    for (int i = 0; i < MEMORY_DEPTH; ++i) {
+    for (int i = 0; i < LCD_WIDTH; ++i) {
         sum_of_squares += (int32_t)waveform[i] * waveform[i];
     }
-    double mean_of_squares = (double)sum_of_squares / MEMORY_DEPTH;
+    double mean_of_squares = (double)sum_of_squares / LCD_WIDTH;
     double rms = sqrt(mean_of_squares);
     return (int)rms;
 }
@@ -83,13 +105,13 @@ int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
 
 void draw_waveform(Oscilloscope_channel* ch){
 	for(int i = 0; i < 420; ++i)
-				ch->waveform_display[i] = ((((ch->waveform[i])*3.3)/4096) *ch->y_scale_mV)/42;
+				ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i])*1000;
 	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
 		int x0 = i;
 		int x1 = i+1;
-		int y0 = CANVA_MIDDLE_V - ch->y_offset - ch->waveform_display[i];
-		int y1 = CANVA_MIDDLE_V - ch->y_offset - ch->waveform_display[i+1];
+		int y0 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[i]*42)/ch->y_scale_mV;
+		int y1 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[i+1]*42)/ch->y_scale_mV;
 		if(y0 < 32)
 			y0 = 32;
 		if(y0 > 284)
@@ -156,19 +178,25 @@ void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 
 	sprintf(buf,"%d", ch->number);
 	LCD_Font(x + 16, 312, buf, _Open_Sans_Bold_14, 1, BLACK);
-	sprintf(buf,"%dmV", ch->y_scale_mV);
+
+
+	if(ch->y_scale_mV < 1000){
+	  sprintf(buf,"%dmV", (int) ch->y_scale_mV);
+	}
+	else
+		sprintf(buf,"%dV", (int) ch->y_scale_mV/1000);
 	LCD_Font(x + 42, 312, buf, _Open_Sans_Bold_14, 1, colorVoltage);
 }
 
 void displayTimeBase(Oscilloscope* osc){
 	char buf[20];
 	if(osc->timeBase_us < 1000){
-	  sprintf(buf,"H %dus", osc->timeBase_us);
+	  sprintf(buf,"H %dus", (int) osc->timeBase_us);
 	}
 	else if(osc->timeBase_us < 1000000)
-		sprintf(buf,"H %dms", osc->timeBase_us/1000);
+		sprintf(buf,"H %dms", (int) osc->timeBase_us/1000);
 	else
-		sprintf(buf,"H %ds", osc->timeBase_us/1000000);
+		sprintf(buf,"H %ds", (int) osc->timeBase_us/1000000);
 
 	LCD_Font(8, 19, buf, _Open_Sans_Bold_12  , 1, WHITE);
 	if(osc->selection == SelectionTIME_BASE)
@@ -241,21 +269,6 @@ void serveTouchScreen(Oscilloscope* osc){
 			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
 				osc->selection = SelectionFFT;
 			}
-			//else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (171+40) && osc->touchScreen.Y > 171){
-			//	osc->selection = SelectionMEASUREMENTS;
-			//}
-		}
-
-		else if(osc ->selection == SelectionCURSORS){
-			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (50+40) && osc->touchScreen.Y > 50){
-				osc -> selection = SelectionCURSORS_CHANGE_CHANNEL;
-			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
-				osc -> selection = SelectionCURSORS_VERTICAL;
-			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (130+40) && osc->touchScreen.Y > 130){
-				osc -> selection = SelectionCURSORS_HORIZONTAL;
-			}
 		}
 
 	}else
@@ -272,21 +285,7 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawMainMenu(LIGHT_GREEN);
 		break;
 	case SelectionCURSORS:
-		drawCursorsMenu(osc-> active_cursor_channel, osc -> active_cursor_type);
-		break;
-	case SelectionCURSORS_CHANGE_CHANNEL:
-		//zmien kanal kursora
-		changeActiveCursorChannel(& osc -> active_cursor_channel);
-		osc -> selection = SelectionCURSORS;
-		break;
-	case SelectionCURSORS_VERTICAL:
-		//rysuj kursor pionowy
-		setActiveCursorType(CursorType_VERTICAL, & osc -> active_cursor_type);
-		osc -> selection = SelectionCURSORS;
-		break;
-	case SelectionCURSORS_HORIZONTAL:
-		setActiveCursorType(CursorType_HORIZONTAL, & osc -> active_cursor_type);
-		osc -> selection = SelectionCURSORS;
+		drawCursorsMenu(GREY);
 		break;
 	case SelectionFFT:
 		drawFFTMenu(osc);
@@ -299,10 +298,18 @@ void serveTouchScreen(Oscilloscope* osc){
 void change_parameter(Oscilloscope_channel* ch){
     switch(ch->changedParameter){
         case VerticalScale:
-            ch->y_scale_mV -= 100 * htim1.Instance->CNT;
+        	ch->y_scale_mVIndex += htim1.Instance->CNT;
+    		if(ch->y_scale_mVIndex < 0)
+    			ch->y_scale_mVIndex = 0;
+    		if(ch->y_scale_mVIndex > 9)
+    			ch->y_scale_mVIndex = 9;
+            ch->y_scale_mV = ch->y_scale_mVArray[ch->y_scale_mVIndex];
             break;
         case VerticalOffset:
             ch->y_offset -= htim1.Instance->CNT;
+    		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+    			ch->y_offset = 0;
+    		}
             break;
         case HorizontalOffset:
             ch->x_offset -= htim1.Instance->CNT;
@@ -316,17 +323,11 @@ void serveEncoder(Oscilloscope* osc){
 		if(! osc->ch1.isOn)
 			break;
 		change_parameter(&osc->ch1);
-		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
-			osc->ch1.y_offset = 0;
-		}
 		break;
 	case SelectionCH2:
 		if(! osc->ch2.isOn)
 			break;
 		change_parameter(&osc->ch2);
-		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
-			osc->ch2.y_offset = 0;
-		}
 		break;
 	case SelectionCURSORS:
 		break;
@@ -364,15 +365,15 @@ void drawMenu(Oscilloscope_channel* ch){
 	drawRectangleRoundedFrame(423, 32, 56, 253, ch->color);
 
 	sprintf(buf,"Ch %d", ch->number);
-	LCD_Font(437, 45, buf, _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(437, 45, buf, _Open_Sans_Bold_12, 1, WHITE);
 
 	drawFastHLine(428, 48, 46, ch->color);
 
-	LCD_Font(433, 64, "Scale", _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(433, 64, "Scale", _Open_Sans_Bold_12, 1, WHITE);
 	drawImageTransparentColored(447, 81,  8, 15, arrowUpDown, color1);
 	drawRectangleRoundedFrame(  425, 68, 52, 40, ch->color);
 
-	LCD_Font(433, 125, "Move", _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(433, 125, "Move", _Open_Sans_Bold_12, 1, WHITE);
 	drawImageTransparentColored(447, 142,  8, 15, arrowUpDown, color2);
 	drawRectangleRoundedFrame(  425, 129, 52, 40, ch->color);
 	drawImageTransparentColored(443, 187, 15, 7, arrowLeftRight, color3);
@@ -389,68 +390,21 @@ void drawMainMenu(uint8_t color){
 
 	LCD_Font(438, 74+42, "FFT", _Open_Sans_Bold_12, 1, WHITE);
 	drawRectangleRoundedFrame(425, 92, 52, 40, color);
-
-	//LCD_Font(426, 74+84, "Measur", _Open_Sans_Bold_12, 1, WHITE);
-	//drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
 }
 
-void changeActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
-	if(* active_cursor_channel == CursorChannel_1){
-		* active_cursor_channel = CursorChannel_2;
-	}else if(* active_cursor_channel == CursorChannel_2){
-		* active_cursor_channel = CursorChannel_1;
-	}
-}
+void drawCursorsMenu(uint8_t color){
+	drawRectangleRoundedFrame(423, 32, 56, 253, color);
 
-/*void disableActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
-	* active_cursor_channel = CursorChannel_DISABLE;
-}*/
+	LCD_Font(426, 46, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
 
-void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type){
-	* osc_active_cursor_type = cursor_type_to_set;
-}
+	LCD_Font(436, 74, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+	drawRectangleRoundedFrame(425, 50, 52, 40, color);
 
+	drawImageTransparent(443, 110, 15, 7, arrowLeftRight);
+	drawRectangleRoundedFrame(425, 92, 52, 40, color);
 
-void drawCursorsMenu(enum ActiveCursorChannel active_cursor_channel, enum ActiveCursorType active_cursor_type){
-
-
-	drawRectangleRoundedFrame(423, 32, 56, 253, WHITE);
-
-	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
-
-	drawRectangleRoundedFrame(425, 50, 52, 40, WHITE);
-	drawRectangleRoundedFrame(425, 92, 52, 40, WHITE);
-	drawRectangleRoundedFrame(425, 134, 52, 40, WHITE);
-
-	//LCD_Font(430, 220, "meas", _Open_Sans_Bold_12, 1, WHITE);
-
-	drawRectangleRoundedFrame(425, 243, 52, 40, WHITE);
-
-	if(active_cursor_channel == CursorChannel_1){
-		LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, YELLOW);
-	}else if(active_cursor_channel == CursorChannel_2){
-		LCD_Font(432, 74, "Ch 2", _Open_Sans_Bold_12, 1, BLUE);
-	}
-
-
-
-	if(active_cursor_type == CursorType_DISABLE){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
-		LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
-	}else if(active_cursor_type == CursorType_VERTICAL){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, WHITE);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
-		LCD_Font(436, 235, "time", _Open_Sans_Bold_12, 1, WHITE);
-	}else if(active_cursor_type == CursorType_HORIZONTAL){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, WHITE);
-		LCD_Font(426, 235, "voltage", _Open_Sans_Bold_12, 1, WHITE);
-	}
-
-
-
-
+	drawImageTransparent(447, 108 + 40, 8, 15, arrowUpDown);
+	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
 
 }
 
@@ -468,15 +422,37 @@ void drawFFTMenu(Oscilloscope* osc){
 void drawMeasurements(Oscilloscope* osc){
 	char buf[20];
 	if(osc->ch1.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch1.waveform));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak((uint16_t *)osc->ch1.waveform_display));
 		LCD_Font(90, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS((uint16_t *)osc->ch1.waveform_display));
 		LCD_Font(190, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 	}
 	if(osc->ch2.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch2.waveform));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak((uint16_t *)osc->ch2.waveform_display));
 		LCD_Font(90, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS((uint16_t *)osc->ch2.waveform_display));
 		LCD_Font(190, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 	}
+}
+
+void drawRunStop(Oscilloscope* osc){
+	drawRectangleRoundedFrame(399, 288, 80, 28, GREY);
+	if(osc->stop)
+		LCD_Font(480 - 50, 307, "STOP", _Open_Sans_Bold_14, 1, RED);
+	else
+		LCD_Font(402, 307, "RUNNING", _Open_Sans_Bold_14, 1, LIGHT_GREEN);
+
+}
+
+void drawTriggerIcon(Oscilloscope* osc){
+	drawRectangleRoundedFrame(399, 3, 80, 22, GREY);
+	drawImageTransparent(405, 7, 9, 15, trigRisingIcon);
+	fillRect(417, 7, 15, 16, YELLOW);
+	LCD_Font(420, 20, "1", _Open_Sans_Bold_14, 1, BLACK);
+	LCD_Font(433, 20, "1.00V", _Open_Sans_Bold_14, 1, YELLOW);
+
+}
+
+float convertAdcToVoltage(uint16_t adcValue){
+	return adcValue*ADC_VREF/ADC_RESOLUTION;
 }

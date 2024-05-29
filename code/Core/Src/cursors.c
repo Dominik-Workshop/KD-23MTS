@@ -2,8 +2,6 @@
 #include "ILI9488.h"
 //arm_map
 
-int32_t time_cursor_1, time_cursor_2, voltage_cursor_1, voltage_cursor_2;
-
 void resetCursors(){
 	time_cursor_1 = 0;
 	time_cursor_2 = SCOPE_X;

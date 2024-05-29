@@ -31,6 +31,9 @@ extern  TS_DrvTypeDef         *ts_drv;
 
 #define MEMORY_DEPTH  480//512
 
+#define ADC_RESOLUTION 4096
+#define ADC_VREF 3.3
+
 enum ChangedParameter{
 	HorizontalOffset,
 	VerticalOffset,
@@ -45,11 +48,7 @@ enum Selection{
 	SelectionTRIGGER,
 	SelectionMAIN_MENU,
 	SelectionCURSORS,
-	SelectionCURSORS_CHANGE_CHANNEL,
-	SelectionCURSORS_VERTICAL,
-	SelectionCURSORS_HORIZONTAL,
 	SelectionFFT,
-	SelectionMEASUREMENTS,
 	Idle
 };
 
@@ -64,35 +63,17 @@ enum ClickedItem{
 	Nothing
 };
 
-enum ActiveCursorChannel{
-	CursorChannel_1,
-	CursorChannel_2
-};
-
-enum ActiveCursorType{
-	CursorType_VERTICAL,
-	CursorType_HORIZONTAL,
-	CursorType_DISABLE
-};
-
-typedef struct cursors{
-
-	int32_t vertical_cursor_1;
-	int32_t vertical_cursor_2;
-	int32_t horizontal_cursor_1;
-	int32_t horizontal_cursor_2;
-
-}Channel_cursors;
-
 typedef struct osc_ch{
-	uint16_t waveform[MEMORY_DEPTH];				// all samples
+	uint16_t waveform_raw_adc[MEMORY_DEPTH];		// all samples
 
 	int16_t x_offset;								// horizontal offset
 	int16_t y_offset;								// vertical offset (offset = 0 => 0V = middle of the display)
 
 	uint16_t y_scale_mV;							// vertical scale [mV/div]
+	uint32_t y_scale_mVArray[10];
+	int8_t y_scale_mVIndex;
 
-	uint16_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed
+	uint32_t waveform_display[LCD_WIDTH];			// section of waveform currently displayed [mV]
 	uint8_t color;
 
 	uint8_t isOn;
@@ -100,13 +81,7 @@ typedef struct osc_ch{
 
 	enum ChangedParameter changedParameter;
 
-	Channel_cursors cursors;
-
-
 }Oscilloscope_channel;
-
-
-
 
 typedef struct osc{
 	Oscilloscope_channel ch1;
@@ -121,17 +96,17 @@ typedef struct osc{
 	uint32_t timeBaseArray[22];
 	int8_t timeBaseIndex;
 
-	enum ActiveCursorChannel active_cursor_channel;
-	enum ActiveCursorType active_cursor_type;
-
+	uint8_t stop;
 }Oscilloscope;
 
 void oscilloscopeInit(Oscilloscope* osc);
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color);
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch);
-int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]);
-int calculate_RMS(int16_t waveform[MEMORY_DEPTH]);
+//int calculate_peak_to_peak(uint32_t waveform[LCD_WIDTH]);
+//int calculate_RMS(uint32_t waveform[LCD_WIDTH]);
+int calculate_peak_to_peak(uint16_t waveform[LCD_WIDTH]);
+int calculate_RMS(uint16_t waveform[LCD_WIDTH]);
 
 void draw_waveform(Oscilloscope_channel* ch);
 
@@ -146,17 +121,11 @@ void serveEncoder(Oscilloscope* osc);
 
 void drawMenu(Oscilloscope_channel* ch);
 void drawMainMenu(uint8_t color);
-
-
-void drawCursorsMenu(enum ActiveCursorChannel active_cursor_channel, enum ActiveCursorType active_cursor_type);
-void changeActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel);
-//void disableActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel);
-
-void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type);
-
-
-
+void drawCursorsMenu(uint8_t color);
 void drawFFTMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);
+void drawRunStop(Oscilloscope* osc);
+void drawTriggerIcon(Oscilloscope* osc);
+float convertAdcToVoltage(uint16_t adcValue);
 
 #endif
