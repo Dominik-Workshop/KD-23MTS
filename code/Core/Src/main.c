@@ -80,6 +80,7 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
 	if(conv_done & done_drawing){
 		conv_done = 0;
 		HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+		HAL_ADC_Start_DMA(&hadc2, (uint32_t*) oscilloscope.ch2.waveform_raw_adc , MEMORY_DEPTH);
 		ready_to_draw = 1;
 		done_drawing = 0;
 	}
@@ -139,12 +140,15 @@ int main(void)
   MX_USART2_UART_Init();
   MX_DAC1_Init();
   MX_COMP1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
+
 
   HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
   HAL_COMP_Start(&hcomp1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+  HAL_ADC_Start_DMA(&hadc2, (uint32_t*) oscilloscope.ch2.waveform_raw_adc , MEMORY_DEPTH);
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
@@ -186,6 +190,7 @@ int main(void)
 	  if(oscilloscope.ch1.isOn){
 		  if(ready_to_draw){
 			  draw_waveform(& oscilloscope.ch1);
+			  draw_waveform(& oscilloscope.ch2);
 			  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
 			  ready_to_draw = 0;
 			  done_drawing = 1;
@@ -201,6 +206,7 @@ int main(void)
 	  drawMeasurements(&oscilloscope);
 	  drawRunStop(&oscilloscope);
 	  drawTriggerIcon(&oscilloscope);
+	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(oscilloscope.triggerLevel_px_formZero * oscilloscope.ch1.y_scale_mV / 42.0 / 1000.0));
 
 	  imageRender();
 

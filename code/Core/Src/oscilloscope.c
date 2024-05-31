@@ -38,6 +38,7 @@ void oscilloscopeInit(Oscilloscope* osc){
 	uint32_t timeBaseArray[] = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
+	osc->triggerLevel_px_formZero = 0;
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
 	//touchScreenCalibration();
@@ -104,8 +105,12 @@ int calculate_RMS(uint16_t waveform[LCD_WIDTH]) {
 
 
 void draw_waveform(Oscilloscope_channel* ch){
-	for(int i = 0; i < 420; ++i)
-				ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i])*1000;
+	for(int i = 0; i < 420; ++i){
+		if(ch->number == 1)
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+37])*1000;
+		else
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i])*1000;
+	}
 	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
 		int x0 = i;
@@ -122,6 +127,7 @@ void draw_waveform(Oscilloscope_channel* ch){
 			y1 = 284;
 		drawLine(x0, y0, x1, y1, ch->color);
 	}
+
 	// draw marker 0V
 	if((CANVA_MIDDLE_V - ch->y_offset - 2 > 32) && (CANVA_MIDDLE_V - ch->y_offset - 2 < 284)){
 		for(int j = 0; j < 5; ++j)
@@ -234,6 +240,11 @@ void serveTouchScreen(Oscilloscope* osc){
 		else if(osc->touchScreen.X < 70  && osc->touchScreen.Y < 25){			// Time per division
 			osc->selection = SelectionTIME_BASE;
 		}
+
+		else if(osc->touchScreen.X > 400  && osc->touchScreen.Y < 25){			// Trigger
+			osc->selection = SelectionTRIGGER;
+		}
+
 		else if(osc->touchScreen.X < 420 && osc->touchScreen.Y > 32 && osc->touchScreen.Y < 284){
 			osc->selection = SelectionMAIN_MENU;
 		}
@@ -338,6 +349,9 @@ void serveEncoder(Oscilloscope* osc){
 		if(osc->timeBaseIndex > 21)
 			osc->timeBaseIndex = 21;
 		osc->timeBase_us = osc->timeBaseArray[osc->timeBaseIndex];
+		break;
+	case SelectionTRIGGER:
+		osc->triggerLevel_px_formZero -= htim1.Instance->CNT;
 		break;
 	case Idle:
 		break;
@@ -445,12 +459,16 @@ void drawRunStop(Oscilloscope* osc){
 }
 
 void drawTriggerIcon(Oscilloscope* osc){
+	char buf[20];
 	drawRectangleRoundedFrame(399, 3, 80, 22, GREY);
 	drawImageTransparent(405, 7, 9, 15, trigRisingIcon);
 	fillRect(417, 7, 15, 16, YELLOW);
 	LCD_Font(420, 20, "1", _Open_Sans_Bold_14, 1, BLACK);
-	LCD_Font(433, 20, "1.00V", _Open_Sans_Bold_14, 1, YELLOW);
+	sprintf(buf, "%.2fV", osc->triggerLevel_px_formZero * osc->ch1.y_scale_mV / 42.0 / 1000.0);
+	LCD_Font(433, 20, buf, _Open_Sans_Bold_14, 1, YELLOW);
 
+	drawFastHLine(0, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, 420, RED);
+	//drawPixel(2, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, RED);
 }
 
 float convertAdcToVoltage(uint16_t adcValue){

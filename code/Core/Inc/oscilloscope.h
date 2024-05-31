@@ -24,12 +24,10 @@ extern  TS_DrvTypeDef         *ts_drv;
 #define LCD_HEIGHT 320
 #define LCD_BRIGHTNESS 1000 // 0-1000
 
-#define MEMORY_DEPTH  480//512
+#define MEMORY_DEPTH  600//512
 
 #define CANVA_MIDDLE_V 158
 
-
-#define MEMORY_DEPTH  480//512
 
 #define ADC_RESOLUTION 4096
 #define ADC_VREF 3.3
@@ -95,6 +93,8 @@ typedef struct osc{
 
 	uint32_t timeBaseArray[22];
 	int8_t timeBaseIndex;
+
+	int16_t triggerLevel_px_formZero;
 
 	uint8_t stop;
 }Oscilloscope;
