@@ -187,20 +187,19 @@ int main(void)
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
 
-	  if(oscilloscope.ch1.isOn){
-		  if(ready_to_draw){
+
+	  if(ready_to_draw){
+		  if(oscilloscope.ch1.isOn)
 			  draw_waveform(& oscilloscope.ch1);
+		  if(oscilloscope.ch2.isOn)
 			  draw_waveform(& oscilloscope.ch2);
-			  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
-			  ready_to_draw = 0;
-			  done_drawing = 1;
-		  }
+		  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+		  ready_to_draw = 0;
+		  done_drawing = 1;
 	  }
+
 		  //draw_waveform(& oscilloscope.ch1);
 	  drawChanellVperDev(0, & oscilloscope.ch1);
-
-	  if(oscilloscope.ch2.isOn)
-		  draw_waveform(& oscilloscope.ch2);
 	  drawChanellVperDev(110, & oscilloscope.ch2);
 
 	  drawMeasurements(&oscilloscope);
