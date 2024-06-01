@@ -147,6 +147,7 @@ int main(void)
   HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
   HAL_COMP_Start(&hcomp1);
+  //HAL_COMP_Stop(&hcomp1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
   HAL_ADC_Start_DMA(&hadc2, (uint32_t*) oscilloscope.ch2.waveform_raw_adc , MEMORY_DEPTH);
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
@@ -166,12 +167,13 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   int faza = 0;
 
-  for(int i = 0; i < 480; ++i){
-  		oscilloscope.ch2.waveform_raw_adc[i] = 0;
-  }
-  for(int i = 200; i < 350; ++i){
-	  oscilloscope.ch2.waveform_raw_adc[i] = 3000;
-  }
+//  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+//  // Initialize the ADC with the configured settings
+//  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+//  {
+//      // Initialization Error
+//      Error_Handler();
+//  }
 
   while (1){
 	  clearScreen();
@@ -182,17 +184,52 @@ int main(void)
 	  }
 	  faza++;
 	  */
-
+	  //__HAL_DMA_GET_COUNTER()
 	  displayTimeBase(&oscilloscope);
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
 
+	  switch (oscilloscope.timeBase_us){
+	  case 20:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+		  break;
+	  case 50:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
+		  break;
+	  case 100:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
+		  break;
+	  case 200:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV8;
+		  break;
+	  case 500:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
+		  break;
+	  case 1000:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV32;
+		  break;
+	  case 2000:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV64;
+		  break;
+	  case 5000:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV128;
+		  break;
+	  case 10000:
+		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV256;
+		  break;
+	  }
+	  // Initialize the ADC with the configured settings
+	  if (HAL_ADC_Init(&hadc1) != HAL_OK){
+		  // Initialization Error
+		  Error_Handler();
+	  }
+
 
 	  if(ready_to_draw){
 		  if(oscilloscope.ch1.isOn)
-			  draw_waveform(& oscilloscope.ch1);
+			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us);
 		  if(oscilloscope.ch2.isOn)
-			  draw_waveform(& oscilloscope.ch2);
+			  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us);
 		  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
 		  ready_to_draw = 0;
 		  done_drawing = 1;

@@ -27,6 +27,7 @@ extern  TS_DrvTypeDef         *ts_drv;
 #define MEMORY_DEPTH  600//512
 
 #define CANVA_MIDDLE_V 158
+#define CANVA_WIDTH 420
 
 
 #define ADC_RESOLUTION 4096
@@ -105,10 +106,10 @@ void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color);
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch);
 //int calculate_peak_to_peak(uint32_t waveform[LCD_WIDTH]);
 //int calculate_RMS(uint32_t waveform[LCD_WIDTH]);
-int calculate_peak_to_peak(uint16_t waveform[LCD_WIDTH]);
-int calculate_RMS(uint16_t waveform[LCD_WIDTH]);
+uint32_t calculate_peak_to_peak(uint32_t *waveform);
+uint32_t calculate_RMS(uint32_t *waveform);
 
-void draw_waveform(Oscilloscope_channel* ch);
+void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us);
 
 void drawGrid();
 void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch);
@@ -123,6 +124,7 @@ void drawMenu(Oscilloscope_channel* ch);
 void drawMainMenu(uint8_t color);
 void drawCursorsMenu(uint8_t color);
 void drawFFTMenu(Oscilloscope* osc);
+void drawTriggerMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);
 void drawRunStop(Oscilloscope* osc);
 void drawTriggerIcon(Oscilloscope* osc);

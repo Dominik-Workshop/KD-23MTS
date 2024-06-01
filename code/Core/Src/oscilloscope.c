@@ -38,7 +38,7 @@ void oscilloscopeInit(Oscilloscope* osc){
 	uint32_t timeBaseArray[] = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
-	osc->triggerLevel_px_formZero = 0;
+	osc->triggerLevel_px_formZero = 42;
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
 	//touchScreenCalibration();
@@ -81,30 +81,32 @@ int calculate_RMS(uint32_t waveform[LCD_WIDTH]) {
     return (int)rms;
 }*/
 
-int calculate_peak_to_peak(uint16_t waveform[LCD_WIDTH]){
-	uint16_t max=0, min;
+uint32_t calculate_peak_to_peak(uint32_t *waveform){
+	uint32_t max=0, min;
 	min = 50000;
-	for(int i = 0; i < LCD_WIDTH; ++i){
-		if(waveform[i]<min)
+	for(int i = 0; i < CANVA_WIDTH; ++i){
+		if(waveform[i]<min){
 			min=waveform[i];
-		if(waveform[i]>max)
+		}
+		if(waveform[i]>max){
 			max=waveform[i];
+		}
 	}
 	return max-min;
 }
 
-int calculate_RMS(uint16_t waveform[LCD_WIDTH]) {
-    int64_t sum_of_squares = 0;
-    for (int i = 0; i < LCD_WIDTH; ++i) {
-        sum_of_squares += (int32_t)waveform[i] * waveform[i];
+uint32_t calculate_RMS(uint32_t *waveform) {
+    uint64_t sum_of_squares = 0;
+    for (int i = 0; i < CANVA_WIDTH; ++i) {
+        sum_of_squares += waveform[i] * waveform[i];
     }
-    double mean_of_squares = (double)sum_of_squares / LCD_WIDTH;
-    double rms = sqrt(mean_of_squares);
-    return (int)rms;
+    float mean_of_squares = (float)sum_of_squares / CANVA_WIDTH;
+    float rms = sqrtf(mean_of_squares);
+    return rms;
 }
 
 
-void draw_waveform(Oscilloscope_channel* ch){
+void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us){
 	for(int i = 0; i < 420; ++i){
 		if(ch->number == 1)
 			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+37])*1000;
@@ -127,7 +129,53 @@ void draw_waveform(Oscilloscope_channel* ch){
 			y1 = 284;
 		drawLine(x0, y0, x1, y1, ch->color);
 	}
+/*
+//	float timePerPixel_us = (float)timeBase_us / 42;
+//		float samplingPeriod_us = 0.015625*4095;
+//		float samplesPerPixel = timePerPixel_us / samplingPeriod_us;
+		float samplesPerPixel = timeBase_us;
 
+		uint32_t waveform_adc[MEMORY_DEPTH+10];
+		if(!ch->isOn){
+			for(int i = 0; i < MEMORY_DEPTH; ++i)
+				waveform_adc[i] = (uint32_t)(convertAdcToVoltage(ch->waveform_raw_adc[i])*1000);
+		}
+
+		//int last_x0, last_x1;
+		for(int i = 0; i < 420-1; ++i){
+			//ch->waveform_display[i] = ch->waveform[i];
+			int x0 = i;
+			int x1 = i+1;
+			//int y0 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[(int)(i/samplesPerPixel)]*42)/ch->y_scale_mV;
+			//int y1 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[(int)(i/samplesPerPixel+1)]*42)/ch->y_scale_mV;
+			int s0 = (int) x0;
+			int s1 = (int) x1;
+			if(s0 > MEMORY_DEPTH)
+				s0 = MEMORY_DEPTH;
+			if(s1 > MEMORY_DEPTH)
+				s1 = MEMORY_DEPTH;
+
+			int y0 = CANVA_MIDDLE_V - ch->y_offset - ((float)waveform_adc[s0]*42)/((float)ch->y_scale_mV);
+			int y1 = CANVA_MIDDLE_V - ch->y_offset - ((float)waveform_adc[s1]*42)/((float)ch->y_scale_mV);
+			if(y0 < 32)
+				y0 = 32;
+			if(y0 > 284)
+				y0 = 284;
+			if(y1 < 32)
+				y1 = 32;
+			if(y1 > 284)
+				y1 = 284;
+
+			int xx0 = x0*samplesPerPixel;
+			if(xx0 > CANVA_WIDTH){
+				xx0 = CANVA_WIDTH;
+			}
+			int xx1 = x1*samplesPerPixel;
+			if(xx1 > CANVA_WIDTH){
+				xx1 = CANVA_WIDTH;
+			}
+			drawLine(xx0, y0, xx1, y1, ch->color);
+		}*/
 	// draw marker 0V
 	if((CANVA_MIDDLE_V - ch->y_offset - 2 > 32) && (CANVA_MIDDLE_V - ch->y_offset - 2 < 284)){
 		for(int j = 0; j < 5; ++j)
@@ -301,6 +349,9 @@ void serveTouchScreen(Oscilloscope* osc){
 	case SelectionFFT:
 		drawFFTMenu(osc);
 		break;
+	case SelectionTRIGGER:
+		drawTriggerMenu(osc);
+		break;
 	case Idle:
 		break;
 	}
@@ -343,7 +394,7 @@ void serveEncoder(Oscilloscope* osc){
 	case SelectionCURSORS:
 		break;
 	case SelectionTIME_BASE:
-		osc->timeBaseIndex -= htim1.Instance->CNT;
+		osc->timeBaseIndex += htim1.Instance->CNT;
 		if(osc->timeBaseIndex < 0)
 			osc->timeBaseIndex = 0;
 		if(osc->timeBaseIndex > 21)
@@ -433,18 +484,29 @@ void drawFFTMenu(Oscilloscope* osc){
 	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
 }
 
+void drawTriggerMenu(Oscilloscope* osc){
+	drawRectangleRoundedFrame(423, 32, 56, 253, ORANGE);
+	LCD_Font(426, 45, "Trigger", _Open_Sans_Bold_12, 1, WHITE);
+
+	drawFastHLine(428, 48, 46, ORANGE);
+
+	LCD_Font(429, 64, "Source", _Open_Sans_Bold_12, 1, WHITE);
+	drawRectangleRoundedFrame(  425, 68, 52, 40, ORANGE);
+	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+}
+
 void drawMeasurements(Oscilloscope* osc){
 	char buf[20];
 	if(osc->ch1.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak((uint16_t *)osc->ch1.waveform_display));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch1.waveform_display));
 		LCD_Font(90, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS((uint16_t *)osc->ch1.waveform_display));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform_display));
 		LCD_Font(190, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 	}
 	if(osc->ch2.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak((uint16_t *)osc->ch2.waveform_display));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch2.waveform_display));
 		LCD_Font(90, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS((uint16_t *)osc->ch2.waveform_display));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform_display));
 		LCD_Font(190, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 	}
 }
@@ -467,8 +529,35 @@ void drawTriggerIcon(Oscilloscope* osc){
 	sprintf(buf, "%.2fV", osc->triggerLevel_px_formZero * osc->ch1.y_scale_mV / 42.0 / 1000.0);
 	LCD_Font(433, 20, buf, _Open_Sans_Bold_14, 1, YELLOW);
 
-	drawFastHLine(0, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, 420, RED);
+	//drawFastHLine(0, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, 420, RED);
 	//drawPixel(2, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, RED);
+
+	// draw marker
+	int trigMarkerPos = CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero;
+	if((trigMarkerPos - 2 > 32) && (trigMarkerPos - 2 < 284)){
+		for(int j = 420; j > 415; --j)
+			drawPixel(j, trigMarkerPos - 2, ORANGE);
+	}
+
+	if((trigMarkerPos - 1 > 32) && (trigMarkerPos - 1 < 284)){
+		for(int j = 420; j > 414; --j)
+			drawPixel(j, trigMarkerPos - 1, ORANGE);
+	}
+
+	if((trigMarkerPos > 32) && (trigMarkerPos < 284)){
+		for(int j = 420; j > 413; --j)
+			drawPixel(j, trigMarkerPos, ORANGE);
+	}
+
+	if((trigMarkerPos + 1 > 32) && (trigMarkerPos + 1 < 284)){
+		for(int j = 420; j > 414; --j)
+			drawPixel(j, trigMarkerPos + 1, ORANGE);
+	}
+
+	if((trigMarkerPos + 2 > 32) && (trigMarkerPos + 2 < 284)){
+		for(int j = 420; j > 415; --j)
+			drawPixel(j, trigMarkerPos + 2, ORANGE);
+	}
 }
 
 float convertAdcToVoltage(uint16_t adcValue){
