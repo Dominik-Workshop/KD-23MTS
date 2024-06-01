@@ -95,7 +95,7 @@ typedef struct osc{
 	uint32_t timeBaseArray[22];
 	int8_t timeBaseIndex;
 
-	int16_t triggerLevel_px_formZero;
+	int16_t triggerLevel_mV;
 
 	uint8_t stop;
 }Oscilloscope;

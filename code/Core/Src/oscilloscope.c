@@ -38,7 +38,7 @@ void oscilloscopeInit(Oscilloscope* osc){
 	uint32_t timeBaseArray[] = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
-	osc->triggerLevel_px_formZero = 42;
+	osc->triggerLevel_mV = 50;
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
 	//touchScreenCalibration();
@@ -402,7 +402,7 @@ void serveEncoder(Oscilloscope* osc){
 		osc->timeBase_us = osc->timeBaseArray[osc->timeBaseIndex];
 		break;
 	case SelectionTRIGGER:
-		osc->triggerLevel_px_formZero -= htim1.Instance->CNT;
+		osc->triggerLevel_mV -= 10*htim1.Instance->CNT;
 		break;
 	case Idle:
 		break;
@@ -526,14 +526,11 @@ void drawTriggerIcon(Oscilloscope* osc){
 	drawImageTransparent(405, 7, 9, 15, trigRisingIcon);
 	fillRect(417, 7, 15, 16, YELLOW);
 	LCD_Font(420, 20, "1", _Open_Sans_Bold_14, 1, BLACK);
-	sprintf(buf, "%.2fV", osc->triggerLevel_px_formZero * osc->ch1.y_scale_mV / 42.0 / 1000.0);
+	sprintf(buf, "%.2fV", osc->triggerLevel_mV/1000.0);
 	LCD_Font(433, 20, buf, _Open_Sans_Bold_14, 1, YELLOW);
 
-	//drawFastHLine(0, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, 420, RED);
-	//drawPixel(2, CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero, RED);
-
 	// draw marker
-	int trigMarkerPos = CANVA_MIDDLE_V - osc->ch1.y_offset - osc->triggerLevel_px_formZero;
+	int trigMarkerPos = CANVA_MIDDLE_V - osc->ch1.y_offset - ((osc->triggerLevel_mV*42)/osc->ch1.y_scale_mV);
 	if((trigMarkerPos - 2 > 32) && (trigMarkerPos - 2 < 284)){
 		for(int j = 420; j > 415; --j)
 			drawPixel(j, trigMarkerPos - 2, ORANGE);

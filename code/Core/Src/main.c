@@ -97,8 +97,11 @@ int _write(int file, char* ptr, int len){
 /**
  * @brief convert voltage to DAC value
  */
-int conv_voltage_to_DAC(double voltage){
+int conv_voltage_to_DAC(float voltage){
 	int dac = voltage*DAC_RESOLUTION/DAC_VREF;
+	if(dac > DAC_RESOLUTION){
+		dac = DAC_RESOLUTION;
+	}
 	return (int) dac;
 }
 /* USER CODE END 0 */
@@ -242,7 +245,7 @@ int main(void)
 	  drawMeasurements(&oscilloscope);
 	  drawRunStop(&oscilloscope);
 	  drawTriggerIcon(&oscilloscope);
-	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(oscilloscope.triggerLevel_px_formZero * oscilloscope.ch1.y_scale_mV / 42.0 / 1000.0));
+	  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(oscilloscope.triggerLevel_mV/1000.0));
 
 	  imageRender();
 
