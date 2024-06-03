@@ -147,7 +147,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
 
-  HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
+  //HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
   HAL_COMP_Start(&hcomp1);
   //HAL_COMP_Stop(&hcomp1);
@@ -170,54 +170,42 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   int faza = 0;
 
-//  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
-//  // Initialize the ADC with the configured settings
-//  if (HAL_ADC_Init(&hadc1) != HAL_OK)
-//  {
-//      // Initialization Error
-//      Error_Handler();
-//  }
-
   while (1){
 	  clearScreen();
 	  drawGrid();
 
-	  /*for(int i = 0; i < 480; ++i){
-		oscilloscope.ch1.waveform[i] = 2000*sinf(0.05f*i + faza*0.1f) + 2000;
-	  }
-	  faza++;
-	  */
 	  //__HAL_DMA_GET_COUNTER()
 	  displayTimeBase(&oscilloscope);
+	  displayHorizontallOffset(&oscilloscope);
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
 
 	  switch (oscilloscope.timeBase_us){
-	  case 20:
+	  case 10:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
 		  break;
-	  case 50:
+	  case 20:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV2;
 		  break;
-	  case 100:
+	  case 40:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV4;
 		  break;
-	  case 200:
+	  case 80:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV8;
 		  break;
-	  case 500:
+	  case 160:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV16;
 		  break;
-	  case 1000:
+	  case 320:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV32;
 		  break;
-	  case 2000:
+	  case 640:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV64;
 		  break;
-	  case 5000:
+	  case 1280:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV128;
 		  break;
-	  case 10000:
+	  case 2560:
 		  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV256;
 		  break;
 	  }
@@ -227,12 +215,13 @@ int main(void)
 		  Error_Handler();
 	  }
 
-
+	  drawChannels0Vmarkers(&oscilloscope.ch1);
+	  drawChannels0Vmarkers(&oscilloscope.ch2);
 	  if(ready_to_draw){
 		  if(oscilloscope.ch1.isOn)
-			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us);
+			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us, oscilloscope.x_offset);
 		  if(oscilloscope.ch2.isOn)
-			  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us);
+			  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us, oscilloscope.x_offset);
 		  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
 		  ready_to_draw = 0;
 		  done_drawing = 1;
@@ -313,14 +302,7 @@ void SystemClock_Config(void)
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_ADC;
   PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
-  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_PLLSAI1;
-  PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSI;
-  PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
-  PeriphClkInit.PLLSAI1.PLLSAI1N = 8;
-  PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
-  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
-  PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_ADC1CLK;
+  PeriphClkInit.AdcClockSelection = RCC_ADCCLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
