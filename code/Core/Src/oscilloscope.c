@@ -23,11 +23,11 @@ void oscilloscopeInit(Oscilloscope* osc){
 	osc->ch1.number = 1;
 	oscilloscope_channel_init(&(osc->ch2), BLUE);
 	osc->ch2.number = 2;
-	osc->timeBase_us = 1000;
+	osc->timeBase_us = 160;
 	osc->selection = SelectionCH1;
 	osc->clickedItem = Nothing;
 	osc->ch2.y_scale_mV = 500;
-	osc->timeBaseIndex = 9;
+	osc->timeBaseIndex = 4;
 	osc->ch1.y_scale_mVIndex = 6;
 	osc->ch2.y_scale_mVIndex = 6;
 	osc->ch2.y_scale_mV = 1000;
@@ -36,7 +36,7 @@ void oscilloscopeInit(Oscilloscope* osc){
 	uint32_t y_scale_mVArray[] = {10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000};
 	memcpy(osc->ch1.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
 	memcpy(osc->ch2.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
-	uint32_t timeBaseArray[] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
+	uint32_t timeBaseArray[] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
 	osc->triggerLevel_mV = 1500;
@@ -85,13 +85,16 @@ uint32_t calculate_RMS(uint32_t *waveform) {
 }
 
 
-void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset){
-	for(int i = 0; i < 420; ++i){
-		if(ch->number == 1)
-			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
-		else
-			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
+void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset, int stop){
+	if(!stop){
+		for(int i = 0; i < 420; ++i){
+				if(ch->number == 1)
+					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
+				else
+					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
+			}
 	}
+
 	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
 		int x0 = i;
@@ -157,6 +160,11 @@ void drawGrid(){
 			drawFastHLine(208, i, 5, GREY);
 }
 
+void drawMainMenuButton(){
+	drawRectangleRoundedFrame(310, 288, 80, 28, GREY);
+	LCD_Font(330, 307, "Menu", _Open_Sans_Bold_14, 1, WHITE);
+}
+
 void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 	char buf[20];
 	uint8_t colorFrame = ch->isOn ? ch->color : GREY;
@@ -183,13 +191,7 @@ void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 
 void displayTimeBase(Oscilloscope* osc){
 	char buf[20];
-	if(osc->timeBase_us < 1000){
-	  sprintf(buf,"H %dus", (int) osc->timeBase_us);
-	}
-	else if(osc->timeBase_us < 1000000)
-		sprintf(buf,"H %dms", (int) osc->timeBase_us/1000);
-	else
-		sprintf(buf,"H %ds", (int) osc->timeBase_us/1000000);
+	sprintf(buf,"H %dus", (int) osc->timeBase_us);
 
 	LCD_Font(8, 19, buf, _Open_Sans_Bold_12  , 1, WHITE);
 	if(osc->selection == SelectionTIME_BASE)
@@ -233,6 +235,13 @@ void serveTouchScreen(Oscilloscope* osc){
 			osc->selection = SelectionCH2;
 		}
 
+		else if(osc->touchScreen.X > 399 && osc->touchScreen.Y > 290){
+			if(osc->clickedItem != ClickedRUN_STOP){
+				osc->stop = !osc->stop;
+				osc->clickedItem = ClickedRUN_STOP;
+			}
+		}
+
 		else if(osc->touchScreen.X < 70  && osc->touchScreen.Y < 25){			// Time per division
 			osc->selection = SelectionTIME_BASE;
 		}
@@ -244,7 +253,7 @@ void serveTouchScreen(Oscilloscope* osc){
 			osc->selection = SelectionTRIGGER;
 		}
 
-		else if(osc->touchScreen.X < 420 && osc->touchScreen.Y > 32 && osc->touchScreen.Y < 284){
+		else if(osc->touchScreen.X > 310 && osc->touchScreen.X < 390 && osc->touchScreen.Y > 288){
 			osc->selection = SelectionMAIN_MENU;
 		}
 
@@ -286,7 +295,7 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawMenu(& osc->ch2);
 		break;
 	case SelectionMAIN_MENU:
-		drawMainMenu(LIGHT_GREEN);
+		drawMainMenu(WHITE);
 		break;
 	case SelectionCURSORS:
 		drawCursorsMenu(GREY);
@@ -339,8 +348,8 @@ void serveEncoder(Oscilloscope* osc){
 		osc->timeBaseIndex += htim1.Instance->CNT;
 		if(osc->timeBaseIndex < 0)
 			osc->timeBaseIndex = 0;
-		if(osc->timeBaseIndex > 21)
-			osc->timeBaseIndex = 21;
+		if(osc->timeBaseIndex > 8)
+			osc->timeBaseIndex = 8;
 		osc->timeBase_us = osc->timeBaseArray[osc->timeBaseIndex];
 		break;
 	case SelectionMOVE_WAVEFORMS_HORIZONTALLY:
@@ -470,9 +479,9 @@ void drawMeasurements(Oscilloscope* osc){
 void drawRunStop(Oscilloscope* osc){
 	drawRectangleRoundedFrame(399, 288, 80, 28, GREY);
 	if(osc->stop)
-		LCD_Font(480 - 50, 307, "STOP", _Open_Sans_Bold_14, 1, RED);
+		LCD_Font(420, 307, "STOP", _Open_Sans_Bold_14, 1, RED);
 	else
-		LCD_Font(402, 307, "RUNNING", _Open_Sans_Bold_14, 1, LIGHT_GREEN);
+		LCD_Font(423, 307, "RUN", _Open_Sans_Bold_14, 1, LIGHT_GREEN);
 
 }
 

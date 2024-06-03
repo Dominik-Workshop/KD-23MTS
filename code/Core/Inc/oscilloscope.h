@@ -43,12 +43,13 @@ enum ChangedParameter{
 enum Selection{
 	SelectionCH1,
 	SelectionCH2,
-	SelectionMOVE_WAVEFORMS_HORIZONTALLY,
 	SelectionTIME_BASE,
+	SelectionMOVE_WAVEFORMS_HORIZONTALLY,
 	SelectionTRIGGER,
 	SelectionMAIN_MENU,
 	SelectionCURSORS,
 	SelectionFFT,
+	SelectedRUN_STOP,
 	Idle
 };
 
@@ -61,6 +62,7 @@ enum ClickedItem{
 	ClickedMAIN_MENU,
 	ClickedCURSORS,
 	ClickedFFT,
+	ClickedRUN_STOP,
 	Nothing
 };
 
@@ -94,7 +96,7 @@ typedef struct osc{
 	enum Selection selection;
 	enum ClickedItem clickedItem;
 
-	uint32_t timeBaseArray[22];
+	uint32_t timeBaseArray[9];
 	int8_t timeBaseIndex;
 
 	int16_t triggerLevel_mV;
@@ -110,7 +112,7 @@ void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch);
 uint32_t calculate_peak_to_peak(uint32_t *waveform);
 uint32_t calculate_RMS(uint32_t *waveform);
 
-void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset);
+void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset, int stop);
 
 void drawGrid();
 void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch);
@@ -123,6 +125,7 @@ void change_parameter(Oscilloscope_channel* ch);
 void serveEncoder(Oscilloscope* osc);
 
 void drawMenu(Oscilloscope_channel* ch);
+void drawMainMenuButton();
 void drawMainMenu(uint8_t color);
 void drawCursorsMenu(uint8_t color);
 void drawFFTMenu(Oscilloscope* osc);
