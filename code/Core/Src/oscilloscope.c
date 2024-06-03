@@ -89,7 +89,7 @@ void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset, i
 	if(!stop){
 		for(int i = 0; i < 420; ++i){
 				if(ch->number == 1)
-					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
+					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset+(360/timeBase_us)])*1000;
 				else
 					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
 			}
