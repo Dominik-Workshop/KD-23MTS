@@ -177,8 +177,7 @@ int main(void)
 	  displayTimeBase(&oscilloscope);
 	  drawMainMenuButton();
 	  displayHorizontallOffset(&oscilloscope);
-	  serveTouchScreen(&oscilloscope);
-	  serveEncoder(&oscilloscope);
+
 
 	  switch (oscilloscope.timeBase_us){
 	  case 10:
@@ -232,7 +231,8 @@ int main(void)
 		  if(oscilloscope.ch2.isOn)
 			  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
 	  }
-
+	  serveTouchScreen(&oscilloscope);
+	  serveEncoder(&oscilloscope);
 		  //draw_waveform(& oscilloscope.ch1);
 	  drawChanellVperDev(0, & oscilloscope.ch1);
 	  drawChanellVperDev(110, & oscilloscope.ch2);

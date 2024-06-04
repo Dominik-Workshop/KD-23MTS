@@ -10,7 +10,7 @@ void drawCursorsTime(Channel_cursors * cursors, uint32_t time_per_grid, enum col
 	time_1 = (cursors->time_cursor_1*time_per_grid)/PX_PER_GRID_X;
 	time_2 = (cursors->time_cursor_2*time_per_grid)/PX_PER_GRID_X;
 
-	cursors->calculated_time = time_1 - time_2;
+	cursors->calculated_time = time_2 - time_1;
 
 	if(cursors->num_cursor_flag == 2){
 		drawFastVDottedLine(cursors->time_cursor_1, SCOPE_Y_OFFSET, SCOPE_Y, color);
@@ -37,7 +37,7 @@ void drawCursorsVoltage(Channel_cursors * cursors,  uint32_t volt_per_grid, enum
 	volt_2 = (cursors->voltage_cursor_2*volt_per_grid)/PX_PER_GRID_Y;
 
 
-	cursors->calculated_voltage  = volt_1 - volt_2;
+	cursors->calculated_voltage  = volt_2 - volt_1;
 
 	if(cursors->num_cursor_flag == 2){
 		drawFastHDottedLine(0, cursors->voltage_cursor_1 + SCOPE_Y_OFFSET, SCOPE_X, color);
