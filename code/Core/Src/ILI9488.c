@@ -347,6 +347,17 @@ void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color){
 	}
 }
 
+void drawFastVDottedLine(int16_t x, int16_t y, int16_t h, uint16_t color){
+	if ((x >= _width) || (y >= _height))
+		return;
+	if ((y + h - 1) >= _height)
+		h = _height - y;
+
+	for(uint16_t i = 0; i < h; i+=2){
+		IMG_BUF_SET(x, y+i, color);
+	}
+}
+
 void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
 	if ((x >= _width) || (y >= _height))
 		return;
@@ -354,6 +365,17 @@ void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color){
 		w = _width - x;
 
 	for(uint16_t i = 0; i < w; ++i){
+			IMG_BUF_SET(x+i, y, color);
+		}
+}
+
+void drawFastHDottedLine(int16_t x, int16_t y, int16_t w, uint16_t color){
+	if ((x >= _width) || (y >= _height))
+		return;
+	if ((x + w - 1) >= _width)
+		w = _width - x;
+
+	for(uint16_t i = 0; i < w; i+=2){
 			IMG_BUF_SET(x+i, y, color);
 		}
 }

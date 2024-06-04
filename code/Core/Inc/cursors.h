@@ -3,6 +3,8 @@
 
 #include "main.h"
 #include "tim.h"
+#include "ILI9488.h"
+
 
 #define SCOPE_X 420
 #define GRIDS_X 10
@@ -13,15 +15,36 @@
 #define GRIDS_Y 6
 #define PX_PER_GRID_Y  42//SCOPE_Y/GRIDS_Y
 
-//static int32_t time_cursor_1,time_cursor_2, voltage_cursor_1, voltage_cursor_2;
-static int8_t encoder_button_state = 0;
 
-int measureTime(uint32_t time_per_grid);
-int drawCursorsTime(int32_t time_per_grid, uint8_t curs_num_flag, int32_t encoder);
 
-int measureVoltage(uint32_t voltage_per_grid);
-int drawCursorsVoltage(int32_t volt_per_grid, uint8_t curs_num_flag, int32_t encoder);
 
+enum ActiveCursorType{
+	CursorType_TIME,
+	CursorType_VOLTAGE,
+	CursorType_DISABLE
+};
+
+typedef struct CH_cursors{
+
+	enum ActiveCursorType cursor_type;
+
+	uint16_t time_cursor_1;
+	uint16_t time_cursor_2;
+
+	uint16_t voltage_cursor_1;
+	uint16_t voltage_cursor_2;
+
+	int32_t calculated_time;
+	int32_t calculated_voltage;
+
+	uint8_t num_cursor_flag;  //pietrwszy lub drugi
+
+}Channel_cursors;
+
+
+
+void drawCursorsTime(Channel_cursors * cursors, uint32_t time_per_grid, enum colors color);
+void drawCursorsVoltage(Channel_cursors * cursors,  uint32_t volt_per_grid, enum colors color);
 
 
 //void resetCursors();

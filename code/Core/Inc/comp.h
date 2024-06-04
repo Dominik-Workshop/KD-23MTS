@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : TIM.h
+  * File Name          : COMP.h
   * Description        : This file provides code for the configuration
-  *                      of the TIM instances.
+  *                      of the COMP instances.
   ******************************************************************************
   * @attention
   *
@@ -17,8 +17,8 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __tim_H
-#define __tim_H
+#ifndef __comp_H
+#define __comp_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -30,19 +30,13 @@
 
 /* USER CODE END Includes */
 
-extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim3;
-extern TIM_HandleTypeDef htim4;
+extern COMP_HandleTypeDef hcomp1;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
-void MX_TIM1_Init(void);
-void MX_TIM3_Init(void);
-void MX_TIM4_Init(void);
-
-void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
+void MX_COMP1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
@@ -51,7 +45,7 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ tim_H */
+#endif /*__ comp_H */
 
 /**
   * @}

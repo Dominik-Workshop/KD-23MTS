@@ -167,7 +167,9 @@ void drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t 
 void fillScreen(uint8_t color);
 void drawPixel(int16_t x, int16_t y, uint8_t color);
 void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+void drawFastVDottedLine(int16_t x, int16_t y, int16_t h, uint16_t color);
 void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+void drawFastHDottedLine(int16_t x, int16_t y, int16_t w, uint16_t color);
 void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color);
 void writeLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1,uint16_t color);
 void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint8_t color);

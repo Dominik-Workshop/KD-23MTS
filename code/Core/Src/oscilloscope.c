@@ -8,6 +8,7 @@
 #include "stdio.h"
 #include "oscilloscope.h"
 #include "sprites.h"
+#include "memory.h"
 #include "012_Open_Sans_Bold.h"
 #include "014_Open_Sans_Bold.h"
 
@@ -22,34 +23,43 @@ void oscilloscopeInit(Oscilloscope* osc){
 	osc->ch1.number = 1;
 	oscilloscope_channel_init(&(osc->ch2), BLUE);
 	osc->ch2.number = 2;
-	osc->timeBase_us = 1000;
+	osc->timeBase_us = 160;
 	osc->selection = SelectionCH1;
 	osc->clickedItem = Nothing;
 	osc->ch2.y_scale_mV = 500;
-	osc->timeBaseIndex = 9;
-	uint32_t timeBaseArray[] = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000, 10000000};
+	osc->timeBaseIndex = 4;
+	osc->ch1.y_scale_mVIndex = 6;
+	osc->ch2.y_scale_mVIndex = 6;
+	osc->ch2.y_scale_mV = 1000;
+	osc->stop = 0;
+	osc->x_offset = 0;
+	uint32_t y_scale_mVArray[] = {10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000};
+	memcpy(osc->ch1.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
+	memcpy(osc->ch2.y_scale_mVArray, y_scale_mVArray, sizeof(y_scale_mVArray));
+	uint32_t timeBaseArray[] = {10, 20, 40, 80, 160, 320, 640, 1280, 2560};
 	memcpy(osc->timeBaseArray, timeBaseArray, sizeof(timeBaseArray));
 
+	osc->triggerLevel_mV = 1500;
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
-
+	//touchScreenCalibration();
 
 	osc -> active_cursor_channel = CursorChannel_1;
-	osc -> active_cursor_type = CursorType_DISABLE;
-	//touchScreenCalibration();
+	osc -> changedCursor = CH1_TimeCursor_1;
 }
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
-	ch->x_offset = 0;
 	ch->y_offset = 0;
 	ch->y_scale_mV= 1000;
 	ch->color = color;
 	ch->isOn = 0;
 	ch->changedParameter = VerticalScale;
-	ch->cursors.vertical_cursor_1 = 100;
-	ch->cursors.vertical_cursor_2 = 200;
-	ch->cursors.horizontal_cursor_1 = 100;
-	ch->cursors.horizontal_cursor_2 = 200;
+	ch->cursors.time_cursor_1 = 100;
+	ch->cursors.time_cursor_2 = 200;
+	ch->cursors.voltage_cursor_1 = 100;
+	ch->cursors.voltage_cursor_2 = 200;
+	ch->cursors.cursor_type = CursorType_DISABLE;
+	ch->cursors.num_cursor_flag = 1;
 }
 
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
@@ -59,37 +69,47 @@ void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
 		ch->isOn = 1;
 }
 
-int calculate_peak_to_peak(int16_t waveform[MEMORY_DEPTH]){
-	uint32_t max=0, min=4096;
-	for(int i = 0; i < MEMORY_DEPTH; ++i){
-		if(waveform[i]<min)
+uint32_t calculate_peak_to_peak(uint32_t *waveform){
+	uint32_t max=0, min;
+	min = 50000;
+	for(int i = 0; i < CANVA_WIDTH; ++i){
+		if(waveform[i]<min){
 			min=waveform[i];
-		if(waveform[i]>max)
+		}
+		if(waveform[i]>max){
 			max=waveform[i];
+		}
 	}
 	return max-min;
 }
 
-int calculate_RMS(int16_t waveform[MEMORY_DEPTH]) {
-    int64_t sum_of_squares = 0;
-    for (int i = 0; i < MEMORY_DEPTH; ++i) {
-        sum_of_squares += (int32_t)waveform[i] * waveform[i];
+uint32_t calculate_RMS(uint32_t *waveform) {
+    uint64_t sum_of_squares = 0;
+    for (int i = 0; i < CANVA_WIDTH; ++i) {
+        sum_of_squares += waveform[i] * waveform[i];
     }
-    double mean_of_squares = (double)sum_of_squares / MEMORY_DEPTH;
-    double rms = sqrt(mean_of_squares);
-    return (int)rms;
+    float mean_of_squares = (float)sum_of_squares / CANVA_WIDTH;
+    float rms = sqrtf(mean_of_squares);
+    return rms;
 }
 
 
-void draw_waveform(Oscilloscope_channel* ch){
-	for(int i = 0; i < 420; ++i)
-				ch->waveform_display[i] = ((((ch->waveform[i])*3.3)/4096) *ch->y_scale_mV)/42;
+void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset, int stop){
+	const uint offsetBetweenChannels = 360;
+	for(int i = 0; i < CANVA_WIDTH; ++i){
+		if(ch->number == 1)
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset+(offsetBetweenChannels/timeBase_us)])*1000;
+		else
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
+	}
+
+
 	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
 		int x0 = i;
 		int x1 = i+1;
-		int y0 = CANVA_MIDDLE_V - ch->y_offset - ch->waveform_display[i];
-		int y1 = CANVA_MIDDLE_V - ch->y_offset - ch->waveform_display[i+1];
+		int y0 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[i]*42)/ch->y_scale_mV;
+		int y1 = CANVA_MIDDLE_V - ch->y_offset - (ch->waveform_display[i+1]*42)/ch->y_scale_mV;
 		if(y0 < 32)
 			y0 = 32;
 		if(y0 > 284)
@@ -100,30 +120,37 @@ void draw_waveform(Oscilloscope_channel* ch){
 			y1 = 284;
 		drawLine(x0, y0, x1, y1, ch->color);
 	}
-	// draw marker 0V
-	if((CANVA_MIDDLE_V - ch->y_offset - 2 > 32) && (CANVA_MIDDLE_V - ch->y_offset - 2 < 284)){
+}
+
+void drawChannels0Vmarkers(Oscilloscope_channel* ch){
+	if(!ch->isOn){
+		return;
+	}
+
+	uint16_t markerPosition_px = CANVA_MIDDLE_V - ch->y_offset;
+	if((markerPosition_px - 2 > 32) && (markerPosition_px - 2 < 284)){
 		for(int j = 0; j < 5; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->y_offset - 2, ch->color);
+			drawPixel(j, markerPosition_px - 2, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->y_offset - 1 > 32) && (CANVA_MIDDLE_V - ch->y_offset - 1 < 284)){
+	if((markerPosition_px - 1 > 32) && (markerPosition_px - 1 < 284)){
 		for(int j = 0; j < 6; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->y_offset - 1, ch->color);
+			drawPixel(j, markerPosition_px - 1, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->y_offset > 32) && (CANVA_MIDDLE_V - ch->y_offset < 284)){
+	if((markerPosition_px > 32) && (markerPosition_px < 284)){
 		for(int j = 0; j < 7; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->y_offset, ch->color);
+			drawPixel(j, markerPosition_px, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->y_offset + 1 > 32) && (CANVA_MIDDLE_V - ch->y_offset + 1 < 284)){
+	if((markerPosition_px + 1 > 32) && (markerPosition_px + 1 < 284)){
 	for(int j = 0; j < 6; ++j)
-		drawPixel(j, CANVA_MIDDLE_V - ch->y_offset + 1, ch->color);
+		drawPixel(j, markerPosition_px + 1, ch->color);
 	}
 
-	if((CANVA_MIDDLE_V - ch->y_offset + 2 > 32) && (CANVA_MIDDLE_V - ch->y_offset + 2 < 284)){
+	if((markerPosition_px + 2 > 32) && (markerPosition_px + 2 < 284)){
 	for(int j = 0; j < 5; ++j)
-			drawPixel(j, CANVA_MIDDLE_V - ch->y_offset + 2, ch->color);
+			drawPixel(j, markerPosition_px + 2, ch->color);
 	}
 }
 
@@ -142,6 +169,11 @@ void drawGrid(){
 			drawFastHLine(208, i, 5, GREY);
 }
 
+void drawMainMenuButton(){
+	drawRectangleRoundedFrame(310, 288, 80, 28, GREY);
+	LCD_Font(330, 307, "Menu", _Open_Sans_Bold_14, 1, WHITE);
+}
+
 void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 	char buf[20];
 	uint8_t colorFrame = ch->isOn ? ch->color : GREY;
@@ -156,25 +188,34 @@ void drawChanellVperDev(uint16_t x, Oscilloscope_channel* ch){
 
 	sprintf(buf,"%d", ch->number);
 	LCD_Font(x + 16, 312, buf, _Open_Sans_Bold_14, 1, BLACK);
-	sprintf(buf,"%dmV", ch->y_scale_mV);
+
+
+	if(ch->y_scale_mV < 1000){
+	  sprintf(buf,"%dmV", (int) ch->y_scale_mV);
+	}
+	else
+		sprintf(buf,"%dV", (int) ch->y_scale_mV/1000);
 	LCD_Font(x + 42, 312, buf, _Open_Sans_Bold_14, 1, colorVoltage);
 }
 
 void displayTimeBase(Oscilloscope* osc){
 	char buf[20];
-	if(osc->timeBase_us < 1000){
-	  sprintf(buf,"H %dus", osc->timeBase_us);
-	}
-	else if(osc->timeBase_us < 1000000)
-		sprintf(buf,"H %dms", osc->timeBase_us/1000);
-	else
-		sprintf(buf,"H %ds", osc->timeBase_us/1000000);
+	sprintf(buf,"H %dus", (int) osc->timeBase_us);
 
 	LCD_Font(8, 19, buf, _Open_Sans_Bold_12  , 1, WHITE);
 	if(osc->selection == SelectionTIME_BASE)
 		drawRectangleRoundedFrame(3, 3, 70, 22, WHITE);
 	else
 		drawRectangleRoundedFrame(3, 3, 70, 22, GREY);
+}
+
+void displayHorizontallOffset(Oscilloscope* osc){
+	uint8_t color = GREY;
+	if(osc->selection == SelectionMOVE_WAVEFORMS_HORIZONTALLY){
+		color = WHITE;
+	}
+	drawImageTransparentColored(358, 11, 15, 7, arrowLeftRight, WHITE);
+	drawRectangleRoundedFrame(  340, 3, 50, 22, color);
 }
 
 void serveTouchScreen(Oscilloscope* osc){
@@ -203,10 +244,25 @@ void serveTouchScreen(Oscilloscope* osc){
 			osc->selection = SelectionCH2;
 		}
 
+		else if(osc->touchScreen.X > 399 && osc->touchScreen.Y > 290){
+			if(osc->clickedItem != ClickedRUN_STOP){
+				osc->stop = !osc->stop;
+				osc->clickedItem = ClickedRUN_STOP;
+			}
+		}
+
 		else if(osc->touchScreen.X < 70  && osc->touchScreen.Y < 25){			// Time per division
 			osc->selection = SelectionTIME_BASE;
 		}
-		else if(osc->touchScreen.X < 420 && osc->touchScreen.Y > 32 && osc->touchScreen.Y < 284){
+		else if(osc->touchScreen.X > 340  && osc->touchScreen.X < 390  && osc->touchScreen.Y < 25){			// Time per division
+			osc->selection = SelectionMOVE_WAVEFORMS_HORIZONTALLY;
+		}
+
+		else if(osc->touchScreen.X > 400  && osc->touchScreen.Y < 25){			// Trigger
+			osc->selection = SelectionTRIGGER;
+		}
+
+		else if(osc->touchScreen.X > 310 && osc->touchScreen.X < 390 && osc->touchScreen.Y > 288){
 			osc->selection = SelectionMAIN_MENU;
 		}
 
@@ -217,9 +273,6 @@ void serveTouchScreen(Oscilloscope* osc){
 			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (129+40) && osc->touchScreen.Y > 129){	// CH1 move vertically
 				osc->ch1.changedParameter = VerticalOffset;
 			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (171+40) && osc->touchScreen.Y > 171){	// CH1 move horizontally
-				osc->ch1.changedParameter = HorizontalOffset;
-			}
 		}
 
 		else if(osc->selection == SelectionCH2){
@@ -228,9 +281,6 @@ void serveTouchScreen(Oscilloscope* osc){
 			}
 			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (129+40) && osc->touchScreen.Y > 129){	// CH2 move vertically
 				osc->ch2.changedParameter = VerticalOffset;
-			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (171+40) && osc->touchScreen.Y > 171){	// CH2 move horizontally
-				osc->ch2.changedParameter = HorizontalOffset;
 			}
 		}
 
@@ -241,23 +291,19 @@ void serveTouchScreen(Oscilloscope* osc){
 			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
 				osc->selection = SelectionFFT;
 			}
-			//else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (171+40) && osc->touchScreen.Y > 171){
-			//	osc->selection = SelectionMEASUREMENTS;
-			//}
 		}
-
-		else if(osc ->selection == SelectionCURSORS){
-			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (50+40) && osc->touchScreen.Y > 50){
+		else if(osc ->selection == SelectionCURSORS || osc->selection == SelectionCURSORS_TIME || osc->selection == SelectionCURSORS_VOLTAGE){
+			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (68+40) && osc->touchScreen.Y > 68){
 				osc -> selection = SelectionCURSORS_CHANGE_CHANNEL;
 			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
-				osc -> selection = SelectionCURSORS_VERTICAL;
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (110+40) && osc->touchScreen.Y > 110){
+				osc -> selection = SelectionCURSORS_TIME;
+
 			}
-			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (130+40) && osc->touchScreen.Y > 130){
-				osc -> selection = SelectionCURSORS_HORIZONTAL;
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (152+40) && osc->touchScreen.Y > 152){
+				osc -> selection = SelectionCURSORS_VOLTAGE;
 			}
 		}
-
 	}else
 		osc->clickedItem = Nothing;
 
@@ -269,27 +315,44 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawMenu(& osc->ch2);
 		break;
 	case SelectionMAIN_MENU:
-		drawMainMenu(LIGHT_GREEN);
+		drawMainMenu(WHITE);
 		break;
 	case SelectionCURSORS:
-		drawCursorsMenu(osc-> active_cursor_channel, osc -> active_cursor_type);
+		drawCursorsMenu(osc);
 		break;
 	case SelectionCURSORS_CHANGE_CHANNEL:
-		//zmien kanal kursora
-		changeActiveCursorChannel(& osc -> active_cursor_channel);
+		if( osc->active_cursor_channel == CursorChannel_1){
+			osc->active_cursor_channel = CursorChannel_2;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->active_cursor_channel = CursorChannel_1;
+		}
+		//changeActiveCursorChannel(osc->active_cursor_channel);
+
 		osc -> selection = SelectionCURSORS;
+		drawCursorsMenu(osc);
 		break;
-	case SelectionCURSORS_VERTICAL:
-		//rysuj kursor pionowy
-		setActiveCursorType(CursorType_VERTICAL, & osc -> active_cursor_type);
-		osc -> selection = SelectionCURSORS;
+	case SelectionCURSORS_TIME:
+
+		if(osc->active_cursor_channel == CursorChannel_1 ){
+			osc->ch1.cursors.cursor_type = CursorType_TIME;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->ch2.cursors.cursor_type = CursorType_TIME;
+		}
+		drawCursorsMenu(osc);
 		break;
-	case SelectionCURSORS_HORIZONTAL:
-		setActiveCursorType(CursorType_HORIZONTAL, & osc -> active_cursor_type);
-		osc -> selection = SelectionCURSORS;
+	case SelectionCURSORS_VOLTAGE:
+		if(osc->active_cursor_channel == CursorChannel_1 ){
+			osc->ch1.cursors.cursor_type = CursorType_VOLTAGE;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->ch2.cursors.cursor_type = CursorType_VOLTAGE;
+		}
+		drawCursorsMenu(osc);
 		break;
 	case SelectionFFT:
 		drawFFTMenu(osc);
+		break;
+	case SelectionTRIGGER:
+		drawTriggerMenu(osc);
 		break;
 	case Idle:
 		break;
@@ -299,14 +362,71 @@ void serveTouchScreen(Oscilloscope* osc){
 void change_parameter(Oscilloscope_channel* ch){
     switch(ch->changedParameter){
         case VerticalScale:
-            ch->y_scale_mV -= 100 * htim1.Instance->CNT;
+        	ch->y_scale_mVIndex += htim1.Instance->CNT;
+    		if(ch->y_scale_mVIndex < 0)
+    			ch->y_scale_mVIndex = 0;
+    		if(ch->y_scale_mVIndex > 9)
+    			ch->y_scale_mVIndex = 9;
+            ch->y_scale_mV = ch->y_scale_mVArray[ch->y_scale_mVIndex];
             break;
         case VerticalOffset:
             ch->y_offset -= htim1.Instance->CNT;
+    		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+    			ch->y_offset = 0;
+    		}
             break;
-        case HorizontalOffset:
-            ch->x_offset -= htim1.Instance->CNT;
+    }
+}
+
+void change_cursors(Oscilloscope * osc){
+    switch(osc -> changedCursor){
+        case CH1_TimeCursor_1:
+            osc->ch1.cursors.time_cursor_1 -=  htim1.Instance->CNT;
+            if(osc->ch1.cursors.time_cursor_1  > SCOPE_X){osc->ch1.cursors.time_cursor_1 = SCOPE_X;}
+            if(osc->ch1.cursors.time_cursor_1  < 0){osc->ch1.cursors.time_cursor_1  = 0;}
             break;
+
+        case CH1_TimeCursor_2:
+        	osc->ch1.cursors.time_cursor_2 -=  htim1.Instance->CNT;
+        	if(osc->ch1.cursors.time_cursor_2  > SCOPE_X){osc->ch1.cursors.time_cursor_2 = SCOPE_X;}
+        	if(osc->ch1.cursors.time_cursor_2  < 0){osc->ch1.cursors.time_cursor_2  = 0;}
+        	break;
+
+        case CH1_VoltageCursor_1:
+            osc->ch1.cursors.voltage_cursor_1 +=  htim1.Instance->CNT;
+			if(osc->ch1.cursors.voltage_cursor_1 > SCOPE_Y){osc->ch1.cursors.voltage_cursor_1 = SCOPE_Y;}
+			if(osc->ch1.cursors.voltage_cursor_1 < 0){osc->ch1.cursors.voltage_cursor_1 = 0;}
+            break;
+
+        case CH1_VoltageCursor_2:
+            osc->ch1.cursors.voltage_cursor_2 +=  htim1.Instance->CNT;
+            if(osc->ch1.cursors.voltage_cursor_2 > SCOPE_Y){osc->ch1.cursors.voltage_cursor_2 = SCOPE_Y;}
+            if(osc->ch1.cursors.voltage_cursor_2 < 0){osc->ch1.cursors.voltage_cursor_2 = 0;}
+            break;
+
+        case CH2_TimeCursor_1:
+        	osc->ch2.cursors.time_cursor_1 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.time_cursor_1  > SCOPE_X){osc->ch2.cursors.time_cursor_1 = SCOPE_X;}
+        	if(osc->ch2.cursors.time_cursor_1  < 0){osc->ch2.cursors.time_cursor_1  = 0;}
+        	break;
+
+        case CH2_TimeCursor_2:
+        	osc->ch2.cursors.time_cursor_2 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.time_cursor_1  > SCOPE_X){osc->ch2.cursors.time_cursor_1 = SCOPE_X;}
+        	if(osc->ch2.cursors.time_cursor_1  < 0){osc->ch2.cursors.time_cursor_1  = 0;}
+        	break;
+
+        case CH2_VoltageCursor_1:
+        	osc->ch2.cursors.voltage_cursor_1 +=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.voltage_cursor_1 > SCOPE_Y){osc->ch2.cursors.voltage_cursor_1 = SCOPE_Y;}
+        	if(osc->ch2.cursors.voltage_cursor_1 < 0){osc->ch2.cursors.voltage_cursor_1 = 0;}
+        	break;
+
+        case CH2_VoltageCursor_2:
+        	osc->ch2.cursors.voltage_cursor_2 +=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.voltage_cursor_2 > SCOPE_Y){osc->ch2.cursors.voltage_cursor_2 = SCOPE_Y;}
+        	if(osc->ch2.cursors.voltage_cursor_2 < 0){osc->ch2.cursors.voltage_cursor_2 = 0;}
+        	break;
     }
 }
 
@@ -316,27 +436,64 @@ void serveEncoder(Oscilloscope* osc){
 		if(! osc->ch1.isOn)
 			break;
 		change_parameter(&osc->ch1);
-		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
-			osc->ch1.y_offset = 0;
-		}
 		break;
 	case SelectionCH2:
 		if(! osc->ch2.isOn)
 			break;
 		change_parameter(&osc->ch2);
-		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
-			osc->ch2.y_offset = 0;
-		}
 		break;
 	case SelectionCURSORS:
+	case SelectionCURSORS_TIME:
+	case SelectionCURSORS_VOLTAGE:
+		change_cursors(osc);
+		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+			if(osc->active_cursor_channel == CursorChannel_1){
+				if(osc->ch1.cursors.num_cursor_flag == 1){
+					osc->ch1.cursors.num_cursor_flag = 2;
+				}else if(osc->ch1.cursors.num_cursor_flag == 2){
+					osc->ch1.cursors.num_cursor_flag = 1;
+				}
+			}
+			if(osc->active_cursor_channel == CursorChannel_2){
+				if(osc->ch2.cursors.num_cursor_flag == 1){
+					osc->ch2.cursors.num_cursor_flag = 2;
+				}else if(osc->ch2.cursors.num_cursor_flag == 2){
+					osc->ch2.cursors.num_cursor_flag = 1;
+				}
+			}
+		}
 		break;
 	case SelectionTIME_BASE:
-		osc->timeBaseIndex -= htim1.Instance->CNT;
+		if(osc->stop){
+			break;
+		}
+		osc->timeBaseIndex += htim1.Instance->CNT;
 		if(osc->timeBaseIndex < 0)
 			osc->timeBaseIndex = 0;
-		if(osc->timeBaseIndex > 21)
-			osc->timeBaseIndex = 21;
+		if(osc->timeBaseIndex > 8)
+			osc->timeBaseIndex = 8;
 		osc->timeBase_us = osc->timeBaseArray[osc->timeBaseIndex];
+		break;
+	case SelectionMOVE_WAVEFORMS_HORIZONTALLY:
+		osc->x_offset -= htim1.Instance->CNT;
+		if(osc->x_offset < 0){
+			osc->x_offset = 0;
+		}
+		else if(osc->x_offset > MEMORY_DEPTH - CANVA_WIDTH){
+			osc->x_offset = MEMORY_DEPTH - CANVA_WIDTH;
+		}
+		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+			osc->x_offset = 0;
+		}
+		break;
+	case SelectionTRIGGER:
+		osc->triggerLevel_mV -= 10*htim1.Instance->CNT;
+		if(osc->triggerLevel_mV < 0){
+			osc->triggerLevel_mV = 0;
+		}
+		else if(osc->triggerLevel_mV >3300){
+			osc->triggerLevel_mV = 3300;
+		}
 		break;
 	case Idle:
 		break;
@@ -349,7 +506,6 @@ void drawMenu(Oscilloscope_channel* ch){
 	char buf[10];
 	uint8_t color1 = GREY;
 	uint8_t color2 = GREY;
-	uint8_t color3 = GREY;
 	switch(ch->changedParameter){
 	case VerticalScale:
 		color1 = WHITE;
@@ -357,26 +513,22 @@ void drawMenu(Oscilloscope_channel* ch){
 	case VerticalOffset:
 		color2 = WHITE;
 		break;
-	case HorizontalOffset:
-		color3 = WHITE;
-		break;
 	}
 	drawRectangleRoundedFrame(423, 32, 56, 253, ch->color);
 
 	sprintf(buf,"Ch %d", ch->number);
-	LCD_Font(437, 45, buf, _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(437, 45, buf, _Open_Sans_Bold_12, 1, WHITE);
 
 	drawFastHLine(428, 48, 46, ch->color);
 
-	LCD_Font(433, 64, "Scale", _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(433, 64, "Scale", _Open_Sans_Bold_12, 1, WHITE);
 	drawImageTransparentColored(447, 81,  8, 15, arrowUpDown, color1);
 	drawRectangleRoundedFrame(  425, 68, 52, 40, ch->color);
 
-	LCD_Font(433, 125, "Move", _Open_Sans_Bold_12, 1, ch->color);
+	LCD_Font(433, 125, "Move", _Open_Sans_Bold_12, 1, WHITE);
 	drawImageTransparentColored(447, 142,  8, 15, arrowUpDown, color2);
 	drawRectangleRoundedFrame(  425, 129, 52, 40, ch->color);
-	drawImageTransparentColored(443, 187, 15, 7, arrowLeftRight, color3);
-	drawRectangleRoundedFrame(  425, 171, 52, 40, ch->color);
+
 }
 
 void drawMainMenu(uint8_t color){
@@ -389,69 +541,143 @@ void drawMainMenu(uint8_t color){
 
 	LCD_Font(438, 74+42, "FFT", _Open_Sans_Bold_12, 1, WHITE);
 	drawRectangleRoundedFrame(425, 92, 52, 40, color);
-
-	//LCD_Font(426, 74+84, "Measur", _Open_Sans_Bold_12, 1, WHITE);
-	//drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
 }
 
-void changeActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
-	if(* active_cursor_channel == CursorChannel_1){
-		* active_cursor_channel = CursorChannel_2;
-	}else if(* active_cursor_channel == CursorChannel_2){
-		* active_cursor_channel = CursorChannel_1;
-	}
-}
+void drawCursorsMenu(Oscilloscope * osc){
 
-/*void disableActiveCursorChannel(enum ActiveCursorChannel * active_cursor_channel){
-	* active_cursor_channel = CursorChannel_DISABLE;
-}*/
-
-void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type){
-	* osc_active_cursor_type = cursor_type_to_set;
-}
-
-
-void drawCursorsMenu(enum ActiveCursorChannel active_cursor_channel, enum ActiveCursorType active_cursor_type){
-
-
+	char buf[20];
 	drawRectangleRoundedFrame(423, 32, 56, 253, WHITE);
 
 	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
 
-	drawRectangleRoundedFrame(425, 50, 52, 40, WHITE);
-	drawRectangleRoundedFrame(425, 92, 52, 40, WHITE);
-	drawRectangleRoundedFrame(425, 134, 52, 40, WHITE);
+	drawFastHLine(428, 48, 46, WHITE);
 
-	//LCD_Font(430, 220, "meas", _Open_Sans_Bold_12, 1, WHITE);
 
-	drawRectangleRoundedFrame(425, 243, 52, 40, WHITE);
+	LCD_Font(429, 64, "Source", _Open_Sans_Bold_12, 1, WHITE);
+	drawRectangleRoundedFrame(  425, 68, 52, 40, WHITE);
 
+	drawRectangleRoundedFrame(425, 110, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 152, 52, 40, WHITE);
+
+	if(osc->active_cursor_channel == CursorChannel_1){
+		if(osc->ch1.cursors.cursor_type == CursorType_TIME){
+			drawCursorsTime(&osc->ch1.cursors, osc->timeBase_us, WHITE);
+		}else if(osc->ch1.cursors.cursor_type == CursorType_VOLTAGE){
+			drawCursorsVoltage(&osc->ch1.cursors, osc->ch1.y_scale_mV, WHITE);
+		}
+	}else if(osc->active_cursor_channel == CursorChannel_2){
+		if(osc->ch2.cursors.cursor_type == CursorType_TIME){
+			drawCursorsTime(&osc->ch2.cursors, osc->timeBase_us, WHITE);
+		}else if(osc->ch2.cursors.cursor_type == CursorType_VOLTAGE){
+			drawCursorsVoltage(&osc->ch2.cursors, osc->ch2.y_scale_mV, WHITE);
+		}
+	}
+
+	if(osc->active_cursor_channel == CursorChannel_1){
+		if(osc->ch1.cursors.cursor_type == CursorType_TIME){
+			if(osc->ch1.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH1_TimeCursor_1;
+			}else if(osc->ch1.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH1_TimeCursor_2;
+			}
+
+		}else if(osc->ch1.cursors.cursor_type == CursorType_VOLTAGE){
+			if(osc->ch1.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH1_VoltageCursor_1;
+			}else if(osc->ch1.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH1_VoltageCursor_2;
+			}
+		}
+
+
+		LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+		if(osc->ch1.cursors.cursor_type == CursorType_DISABLE){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, GREY);
+			//LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
+		}else if(osc->ch1.cursors.cursor_type  == CursorType_TIME){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, WHITE);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, GREY);
+
+			fillRect(3+1, 35+1, 125-1, 35-1, BLACK);
+			drawRectangleRoundedFrame(3, 35, 125, 35, GREY);
+
+			LCD_Font(7, 50, "AX-BX = ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dus", osc->ch1.cursors.calculated_time);
+			LCD_Font(60, 50, buf, _Open_Sans_Bold_12, 1, WHITE);
+
+			LCD_Font(6, 50+15, "1/|dX|= ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dHz", 1000000/abs(osc->ch1.cursors.calculated_time));
+			LCD_Font(61, 50+15, buf, _Open_Sans_Bold_12, 1, WHITE);
+		}else if(osc->ch1.cursors.cursor_type  == CursorType_VOLTAGE){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, WHITE);
+
+			fillRect(3+1, 35+1, 125-1, 20-1, BLACK);
+			drawRectangleRoundedFrame(3, 35, 125, 20, GREY);
+
+			LCD_Font(7, 50, "AY-BY = ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dmV", osc->ch1.cursors.calculated_voltage);
+			LCD_Font(60, 50, buf, _Open_Sans_Bold_12, 1, WHITE);
+		}
+
+	}else if(osc->active_cursor_channel == CursorChannel_2){
+		if(osc->ch2.cursors.cursor_type == CursorType_TIME){
+			if(osc->ch2.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH2_TimeCursor_1;
+			}else if(osc->ch2.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH2_TimeCursor_2;
+			}
+
+		}else if(osc->ch2.cursors.cursor_type == CursorType_VOLTAGE){
+			if(osc->ch2.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH2_VoltageCursor_1;
+			}else if(osc->ch2.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH2_VoltageCursor_2;
+			}
+		}
+
+		LCD_Font(437, 93, "Ch 2", _Open_Sans_Bold_12, 1, WHITE);
+		if(osc->ch2.cursors.cursor_type == CursorType_DISABLE){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, GREY);
+		}else if(osc->ch2.cursors.cursor_type  == CursorType_TIME){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, WHITE);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, GREY);
+
+			fillRect(3+1, 35+1, 125-1, 35-1, BLACK);
+			drawRectangleRoundedFrame(3, 35, 125, 35, GREY);
+
+			LCD_Font(7, 50, "AX-BX = ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dus", osc->ch2.cursors.calculated_time);
+			LCD_Font(60, 50, buf, _Open_Sans_Bold_12, 1, WHITE);
+
+			LCD_Font(6, 50+15, "1/|dX|= ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dHz", 1000000/abs(osc->ch2.cursors.calculated_time));
+			LCD_Font(61, 50+15, buf, _Open_Sans_Bold_12, 1, WHITE);
+		}else if(osc->ch2.cursors.cursor_type  == CursorType_VOLTAGE){
+			drawImageTransparentColored(443, 127, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 166, 8, 15, arrowUpDown, WHITE);
+
+			fillRect(3+1, 35+1, 125-1, 20-1, BLACK);
+			drawRectangleRoundedFrame(3, 35, 125, 20, GREY);
+
+			LCD_Font(7, 50, "AY-BY = ", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%dmV", osc->ch2.cursors.calculated_voltage);
+			LCD_Font(60, 50, buf, _Open_Sans_Bold_12, 1, WHITE);
+		}
+	}
+
+
+
+}
+
+void changeActiveCursorChannel(enum ActiveCursorChannel active_cursor_channel){
 	if(active_cursor_channel == CursorChannel_1){
-		LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, YELLOW);
+		 active_cursor_channel = CursorChannel_2;
 	}else if(active_cursor_channel == CursorChannel_2){
-		LCD_Font(432, 74, "Ch 2", _Open_Sans_Bold_12, 1, BLUE);
+		 active_cursor_channel = CursorChannel_1;
 	}
-
-
-
-	if(active_cursor_type == CursorType_DISABLE){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
-		LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
-	}else if(active_cursor_type == CursorType_VERTICAL){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, WHITE);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
-		LCD_Font(436, 235, "time", _Open_Sans_Bold_12, 1, WHITE);
-	}else if(active_cursor_type == CursorType_HORIZONTAL){
-		drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
-		drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, WHITE);
-		LCD_Font(426, 235, "voltage", _Open_Sans_Bold_12, 1, WHITE);
-	}
-
-
-
-
-
 }
 
 void drawFFTMenu(Oscilloscope* osc){
@@ -465,18 +691,79 @@ void drawFFTMenu(Oscilloscope* osc){
 	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
 }
 
+void drawTriggerMenu(Oscilloscope* osc){
+	drawRectangleRoundedFrame(423, 32, 56, 253, ORANGE);
+	LCD_Font(426, 45, "Trigger", _Open_Sans_Bold_12, 1, WHITE);
+
+	drawFastHLine(428, 48, 46, ORANGE);
+
+	LCD_Font(429, 64, "Source", _Open_Sans_Bold_12, 1, WHITE);
+	drawRectangleRoundedFrame(  425, 68, 52, 40, ORANGE);
+	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+}
+
 void drawMeasurements(Oscilloscope* osc){
 	char buf[20];
 	if(osc->ch1.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch1.waveform));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch1.waveform_display));
 		LCD_Font(90, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform_display));
 		LCD_Font(190, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 	}
 	if(osc->ch2.isOn){
-		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch2.waveform));
+		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch2.waveform_display));
 		LCD_Font(90, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
-		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform));
+		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform_display));
 		LCD_Font(190, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 	}
+}
+
+void drawRunStop(Oscilloscope* osc){
+	drawRectangleRoundedFrame(399, 288, 80, 28, GREY);
+	if(osc->stop)
+		LCD_Font(420, 307, "STOP", _Open_Sans_Bold_14, 1, RED);
+	else
+		LCD_Font(423, 307, "RUN", _Open_Sans_Bold_14, 1, LIGHT_GREEN);
+
+}
+
+void drawTriggerIcon(Oscilloscope* osc){
+	char buf[20];
+	drawRectangleRoundedFrame(399, 3, 80, 22, GREY);
+	drawImageTransparent(405, 7, 9, 15, trigRisingIcon);
+	fillRect(417, 7, 15, 16, YELLOW);
+	LCD_Font(420, 20, "1", _Open_Sans_Bold_14, 1, BLACK);
+	sprintf(buf, "%.2fV", osc->triggerLevel_mV/1000.0);
+	LCD_Font(433, 20, buf, _Open_Sans_Bold_14, 1, ORANGE);
+
+	// draw marker
+	int trigMarkerPos = CANVA_MIDDLE_V - osc->ch1.y_offset - ((osc->triggerLevel_mV*42)/osc->ch1.y_scale_mV);
+	if((trigMarkerPos - 2 > 32) && (trigMarkerPos - 2 < 284)){
+		for(int j = 420; j > 415; --j)
+			drawPixel(j, trigMarkerPos - 2, ORANGE);
+	}
+
+	if((trigMarkerPos - 1 > 32) && (trigMarkerPos - 1 < 284)){
+		for(int j = 420; j > 414; --j)
+			drawPixel(j, trigMarkerPos - 1, ORANGE);
+	}
+
+	if((trigMarkerPos > 32) && (trigMarkerPos < 284)){
+		for(int j = 420; j > 413; --j)
+			drawPixel(j, trigMarkerPos, ORANGE);
+	}
+
+	if((trigMarkerPos + 1 > 32) && (trigMarkerPos + 1 < 284)){
+		for(int j = 420; j > 414; --j)
+			drawPixel(j, trigMarkerPos + 1, ORANGE);
+	}
+
+	if((trigMarkerPos + 2 > 32) && (trigMarkerPos + 2 < 284)){
+		for(int j = 420; j > 415; --j)
+			drawPixel(j, trigMarkerPos + 2, ORANGE);
+	}
+}
+
+float convertAdcToVoltage(uint16_t adcValue){
+	return adcValue*ADC_VREF/ADC_RESOLUTION;
 }

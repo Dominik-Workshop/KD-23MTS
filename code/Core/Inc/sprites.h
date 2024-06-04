@@ -10,8 +10,8 @@
 
 #include "inttypes.h"
 
-uint8_t trigRisingIcon[15][9];
-uint8_t arrowUpDown[15][8];
-uint8_t arrowLeftRight[7][15];
+const uint8_t trigRisingIcon[15][9];
+const uint8_t arrowUpDown[15][8];
+const uint8_t arrowLeftRight[7][15];
 
 #endif /* INC_SPRITES_H_ */
