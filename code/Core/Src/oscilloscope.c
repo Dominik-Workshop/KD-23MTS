@@ -46,6 +46,8 @@ void oscilloscopeInit(Oscilloscope* osc){
 
 	osc -> active_cursor_channel = CursorChannel_1;
 	osc -> changedCursor = CH1_TimeCursor_1;
+
+	osc -> fft_active_channel = FFT_Channel_1;
 }
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
@@ -304,6 +306,11 @@ void serveTouchScreen(Oscilloscope* osc){
 				osc -> selection = SelectionCURSORS_VOLTAGE;
 			}
 		}
+		else if(osc->selection == SelectionFFT){
+			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (68+40) && osc->touchScreen.Y > 68){
+					osc -> selection = SelectionFFT_CHANGE_CHANNEL;
+			}
+		}
 	}else
 		osc->clickedItem = Nothing;
 
@@ -350,7 +357,24 @@ void serveTouchScreen(Oscilloscope* osc){
 		break;
 	case SelectionFFT:
 		drawFFTMenu(osc);
+		uint64_t sampling_frequency = 4210526 / osc->timeBase_us/10;
+		if(osc->fft_active_channel == FFT_Channel_1){
+			calculateFFT(osc->ch1.waveform_raw_adc, sampling_frequency);
+		}else if(osc->fft_active_channel == FFT_Channel_2){
+			calculateFFT(osc->ch2.waveform_raw_adc, sampling_frequency);
+		}
 		break;
+	case SelectionFFT_CHANGE_CHANNEL:
+			if( osc->fft_active_channel== FFT_Channel_1){
+				osc->fft_active_channel = FFT_Channel_2;
+			}else if(osc->fft_active_channel == FFT_Channel_2){
+				osc->fft_active_channel = FFT_Channel_1;
+			}
+			//changeActiveCursorChannel(osc->active_cursor_channel);
+
+			osc -> selection = SelectionFFT;
+			drawFFTMenu(osc);
+			break;
 	case SelectionTRIGGER:
 		drawTriggerMenu(osc);
 		break;
@@ -688,8 +712,81 @@ void drawFFTMenu(Oscilloscope* osc){
 
 	LCD_Font(429, 64, "Source", _Open_Sans_Bold_12, 1, WHITE);
 	drawRectangleRoundedFrame(  425, 68, 52, 40, DARK_PINK);
-	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+
+	if(osc -> active_cursor_channel == FFT_Channel_1){
+		LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
+	}else if(osc -> active_cursor_channel == FFT_Channel_2){
+		LCD_Font(437, 93, "Ch 2", _Open_Sans_Bold_12, 1, WHITE);
+	}
+
+
+
+
 }
+
+
+void calculateFFT(uint32_t *waveform, uint32_t sampling_frequency){
+
+	char buff[20];
+	uint32_t signal[FFT_SIZE];
+	for(int i = 0; i < FFT_SIZE; ++i){
+		signal[i] = waveform[i];
+	}
+
+	Complex X[FFT_SIZE];
+	for (int i = 0; i < FFT_SIZE; i++) {
+		X[i].real = signal[i];
+		X[i].imag = 0;
+	}
+
+	// Obliczanie FFT
+	fft(X, FFT_SIZE);
+
+	double amplitude[FFT_SIZE / 2];
+	double frequency[FFT_SIZE / 2];
+	for (int i = 0; i < FFT_SIZE / 2; i++) {
+		amplitude[i] = sqrt(X[i].real * X[i].real + X[i].imag * X[i].imag);
+		frequency[i] = (i *sampling_frequency) / FFT_SIZE;
+		printf("AMPLITUDA: %d\t:\t %d :freq\n\r", amplitude[i], frequency[i]);
+	}
+
+
+
+
+}
+
+
+
+void fft(Complex *X, int N) {
+    if (N <= 1) return;
+
+
+    Complex *X_even = (Complex *)malloc(N / 2 * sizeof(Complex));
+    Complex *X_odd = (Complex *)malloc(N / 2 * sizeof(Complex));
+    for (int i = 0; i < N / 2; i++) {
+        X_even[i] = X[i * 2];
+        X_odd[i] = X[i * 2 + 1];
+    }
+
+
+    fft(X_even, N / 2);
+    fft(X_odd, N / 2);
+
+
+    for (int k = 0; k < N / 2; k++) {
+        double t = -2 * M_PI * k / N;
+        Complex e = {cos(t), sin(t)};
+        Complex temp = {e.real * X_odd[k].real - e.imag * X_odd[k].imag, e.real * X_odd[k].imag + e.imag * X_odd[k].real};
+        X[k].real = X_even[k].real + temp.real;
+        X[k].imag = X_even[k].imag + temp.imag;
+        X[k + N / 2].real = X_even[k].real - temp.real;
+        X[k + N / 2].imag = X_even[k].imag - temp.imag;
+    }
+
+    free(X_even);
+    free(X_odd);
+}
+
 
 void drawTriggerMenu(Oscilloscope* osc){
 	drawRectangleRoundedFrame(423, 32, 56, 253, ORANGE);

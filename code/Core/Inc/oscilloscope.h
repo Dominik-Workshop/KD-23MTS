@@ -26,7 +26,7 @@ extern  TS_DrvTypeDef         *ts_drv;
 #define LCD_BRIGHTNESS 1000 // 0-1000
 
 #define MEMORY_DEPTH  600//512
-
+#define FFT_SIZE 256
 #define CANVA_MIDDLE_V 158
 #define CANVA_WIDTH 420
 
@@ -63,6 +63,7 @@ enum Selection{
 	SelectionCURSORS_TIME,
 	SelectionCURSORS_VOLTAGE,
 	SelectionFFT,
+	SelectionFFT_CHANGE_CHANNEL,
 	SelectedRUN_STOP,
 	Idle
 };
@@ -84,6 +85,18 @@ enum ClickedItem{
 	ClickedRUN_STOP,
 	Nothing
 };
+
+enum FFT_ActiveChannel{
+	FFT_Channel_1,
+	FFT_Channel_2
+};
+
+typedef struct {
+    double real;
+    double imag;
+} Complex;
+
+
 
 typedef struct osc_ch{
 	uint16_t waveform_raw_adc[MEMORY_DEPTH];		// all samples
@@ -125,6 +138,7 @@ typedef struct osc{
 
 	enum ActiveCursorChannel active_cursor_channel;
 	enum ChangedCursor changedCursor;
+	enum FFT_ActiveChannel fft_active_channel;
 }Oscilloscope;
 
 void oscilloscopeInit(Oscilloscope* osc);
@@ -158,6 +172,10 @@ void drawMainMenuButton();
 void drawMainMenu(uint8_t color);
 
 void drawFFTMenu(Oscilloscope* osc);
+void calculateFFT(uint32_t *waveform, uint32_t sampling_frequency);
+void fft(Complex *X, int N);
+
+
 void drawTriggerMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);
 void drawRunStop(Oscilloscope* osc);
