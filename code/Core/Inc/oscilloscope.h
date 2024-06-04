@@ -16,6 +16,7 @@
 #include "ili9488.h"
 #include "ts.h"
 #include "stm32_adafruit_ts.h"
+#include "cursors.h"
 
 extern  TS_DrvTypeDef         *ts_drv;
 #define ts_calib()
@@ -39,6 +40,16 @@ enum ChangedParameter{
 	VerticalScale
 };
 
+enum ChangedCursor{
+	CH1_TimeCursor_1,
+	CH1_TimeCursor_2,
+	CH1_VoltageCursor_1,
+	CH1_VoltageCursor_2,
+	CH2_TimeCursor_1,
+	CH2_TimeCursor_2,
+	CH2_VoltageCursor_1,
+	CH2_VoltageCursor_2
+};
 
 enum Selection{
 	SelectionCH1,
@@ -48,9 +59,17 @@ enum Selection{
 	SelectionTRIGGER,
 	SelectionMAIN_MENU,
 	SelectionCURSORS,
+	SelectionCURSORS_CHANGE_CHANNEL,
+	SelectionCURSORS_TIME,
+	SelectionCURSORS_VOLTAGE,
 	SelectionFFT,
 	SelectedRUN_STOP,
 	Idle
+};
+
+enum ActiveCursorChannel{
+	CursorChannel_1,
+	CursorChannel_2
 };
 
 enum ClickedItem{
@@ -82,6 +101,7 @@ typedef struct osc_ch{
 	uint8_t number;									// number of channel for identification
 
 	enum ChangedParameter changedParameter;
+	Channel_cursors cursors;
 
 }Oscilloscope_channel;
 
@@ -102,6 +122,9 @@ typedef struct osc{
 	int16_t triggerLevel_mV;
 
 	uint8_t stop;
+
+	enum ActiveCursorChannel active_cursor_channel;
+	enum ChangedCursor changedCursor;
 }Oscilloscope;
 
 void oscilloscopeInit(Oscilloscope* osc);
@@ -124,10 +147,16 @@ void serveTouchScreen(Oscilloscope* osc);
 void change_parameter(Oscilloscope_channel* ch);
 void serveEncoder(Oscilloscope* osc);
 
+void change_cursors(Oscilloscope * osc);
+void drawCursorsMenu(Oscilloscope* osc);
+void changeActiveCursorChannel(enum ActiveCursorChannel active_cursor_channel);
+void setActiveCursorType(enum ActiveCursorType  cursor_type_to_set, enum ActiveCursorType * osc_active_cursor_type);
+
+
 void drawMenu(Oscilloscope_channel* ch);
 void drawMainMenuButton();
 void drawMainMenu(uint8_t color);
-void drawCursorsMenu(uint8_t color);
+
 void drawFFTMenu(Oscilloscope* osc);
 void drawTriggerMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);

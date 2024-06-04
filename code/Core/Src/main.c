@@ -168,7 +168,6 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  int faza = 0;
 
   while (1){
 	  clearScreen();

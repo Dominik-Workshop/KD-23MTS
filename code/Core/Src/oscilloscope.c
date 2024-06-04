@@ -43,6 +43,9 @@ void oscilloscopeInit(Oscilloscope* osc){
 	BSP_TS_Init(ILI9488_TFTHEIGHT, ILI9488_TFTWIDTH);
 	ts_calib();
 	//touchScreenCalibration();
+
+	osc -> active_cursor_channel = CursorChannel_1;
+	osc -> changedCursor = CH1_TimeCursor_1;
 }
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
@@ -51,6 +54,12 @@ void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
 	ch->color = color;
 	ch->isOn = 0;
 	ch->changedParameter = VerticalScale;
+	ch->cursors.time_cursor_1 = 100;
+	ch->cursors.time_cursor_2 = 200;
+	ch->cursors.voltage_cursor_1 = 100;
+	ch->cursors.voltage_cursor_2 = 200;
+	ch->cursors.cursor_type = CursorType_DISABLE;
+	ch->cursors.num_cursor_flag = 1;
 }
 
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
@@ -283,6 +292,21 @@ void serveTouchScreen(Oscilloscope* osc){
 				osc->selection = SelectionFFT;
 			}
 		}
+		else if(osc ->selection == SelectionCURSORS || osc->selection == SelectionCURSORS_TIME || osc->selection == SelectionCURSORS_VOLTAGE){
+			if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (50+40) && osc->touchScreen.Y > 50){
+
+				osc -> selection = SelectionCURSORS_CHANGE_CHANNEL;
+
+
+			}
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (92+40) && osc->touchScreen.Y > 92){
+				osc -> selection = SelectionCURSORS_TIME;
+
+			}
+			else if(osc->touchScreen.X > 425 && osc->touchScreen.Y < (130+40) && osc->touchScreen.Y > 130){
+				osc -> selection = SelectionCURSORS_VOLTAGE;
+			}
+		}
 
 	}else
 		osc->clickedItem = Nothing;
@@ -298,7 +322,35 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawMainMenu(WHITE);
 		break;
 	case SelectionCURSORS:
-		drawCursorsMenu(GREY);
+		drawCursorsMenu(osc);
+		break;
+	case SelectionCURSORS_CHANGE_CHANNEL:
+		if( osc->active_cursor_channel == CursorChannel_1){
+			osc->active_cursor_channel = CursorChannel_2;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->active_cursor_channel = CursorChannel_1;
+		}
+		//changeActiveCursorChannel(osc->active_cursor_channel);
+
+		osc -> selection = SelectionCURSORS;
+		drawCursorsMenu(osc);
+		break;
+	case SelectionCURSORS_TIME:
+
+		if(osc->active_cursor_channel == CursorChannel_1 ){
+			osc->ch1.cursors.cursor_type = CursorType_TIME;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->ch2.cursors.cursor_type = CursorType_TIME;
+		}
+		drawCursorsMenu(osc);
+		break;
+	case SelectionCURSORS_VOLTAGE:
+		if(osc->active_cursor_channel == CursorChannel_1 ){
+			osc->ch1.cursors.cursor_type = CursorType_VOLTAGE;
+		}else if(osc->active_cursor_channel == CursorChannel_2){
+			osc->ch2.cursors.cursor_type = CursorType_VOLTAGE;
+		}
+		drawCursorsMenu(osc);
 		break;
 	case SelectionFFT:
 		drawFFTMenu(osc);
@@ -330,6 +382,58 @@ void change_parameter(Oscilloscope_channel* ch){
     }
 }
 
+void change_cursors(Oscilloscope * osc){
+    switch(osc -> changedCursor){
+        case CH1_TimeCursor_1:
+            osc->ch1.cursors.time_cursor_1 -=  htim1.Instance->CNT;
+            if(osc->ch1.cursors.time_cursor_1  > SCOPE_X){osc->ch1.cursors.time_cursor_1 = SCOPE_X;}
+            if(osc->ch1.cursors.time_cursor_1  < 0){osc->ch1.cursors.time_cursor_1  = 0;}
+            break;
+
+        case CH1_TimeCursor_2:
+        	osc->ch1.cursors.time_cursor_2 -=  htim1.Instance->CNT;
+        	if(osc->ch1.cursors.time_cursor_2  > SCOPE_X){osc->ch1.cursors.time_cursor_2 = SCOPE_X;}
+        	if(osc->ch1.cursors.time_cursor_2  < 0){osc->ch1.cursors.time_cursor_2  = 0;}
+        	break;
+
+        case CH1_VoltageCursor_1:
+            osc->ch1.cursors.voltage_cursor_1 -=  htim1.Instance->CNT;
+			if(osc->ch1.cursors.voltage_cursor_1 > SCOPE_Y){osc->ch1.cursors.voltage_cursor_1 = SCOPE_Y;}
+			if(osc->ch1.cursors.voltage_cursor_1 < 0){osc->ch1.cursors.voltage_cursor_1 = 0;}
+            break;
+
+        case CH1_VoltageCursor_2:
+            osc->ch1.cursors.voltage_cursor_2 -=  htim1.Instance->CNT;
+            if(osc->ch1.cursors.voltage_cursor_2 > SCOPE_Y){osc->ch1.cursors.voltage_cursor_2 = SCOPE_Y;}
+            if(osc->ch1.cursors.voltage_cursor_2 < 0){osc->ch1.cursors.voltage_cursor_2 = 0;}
+            break;
+
+        case CH2_TimeCursor_1:
+        	osc->ch2.cursors.time_cursor_1 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.time_cursor_1  > SCOPE_X){osc->ch2.cursors.time_cursor_1 = SCOPE_X;}
+        	if(osc->ch2.cursors.time_cursor_1  < 0){osc->ch2.cursors.time_cursor_1  = 0;}
+        	break;
+
+        case CH2_TimeCursor_2:
+        	osc->ch2.cursors.time_cursor_2 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.time_cursor_1  > SCOPE_X){osc->ch2.cursors.time_cursor_1 = SCOPE_X;}
+        	if(osc->ch2.cursors.time_cursor_1  < 0){osc->ch2.cursors.time_cursor_1  = 0;}
+        	break;
+
+        case CH2_VoltageCursor_1:
+        	osc->ch2.cursors.voltage_cursor_1 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.voltage_cursor_1 > SCOPE_Y){osc->ch2.cursors.voltage_cursor_1 = SCOPE_Y;}
+        	if(osc->ch2.cursors.voltage_cursor_1 < 0){osc->ch2.cursors.voltage_cursor_1 = 0;}
+        	break;
+
+        case CH2_VoltageCursor_2:
+        	osc->ch2.cursors.voltage_cursor_2 -=  htim1.Instance->CNT;
+        	if(osc->ch2.cursors.voltage_cursor_2 > SCOPE_Y){osc->ch2.cursors.voltage_cursor_2 = SCOPE_Y;}
+        	if(osc->ch2.cursors.voltage_cursor_2 < 0){osc->ch2.cursors.voltage_cursor_2 = 0;}
+        	break;
+    }
+}
+
 void serveEncoder(Oscilloscope* osc){
 	switch(osc->selection){
 	case SelectionCH1:
@@ -343,6 +447,25 @@ void serveEncoder(Oscilloscope* osc){
 		change_parameter(&osc->ch2);
 		break;
 	case SelectionCURSORS:
+	case SelectionCURSORS_TIME:
+	case SelectionCURSORS_VOLTAGE:
+		change_cursors(osc);
+		if(HAL_GPIO_ReadPin(ENC_BTN_GPIO_Port, ENC_BTN_Pin) == 0){
+			if(osc->active_cursor_channel == CursorChannel_1){
+				if(osc->ch1.cursors.num_cursor_flag == 1){
+					osc->ch1.cursors.num_cursor_flag = 2;
+				}else if(osc->ch1.cursors.num_cursor_flag == 2){
+					osc->ch1.cursors.num_cursor_flag = 1;
+				}
+			}
+			if(osc->active_cursor_channel == CursorChannel_2){
+				if(osc->ch2.cursors.num_cursor_flag == 1){
+					osc->ch2.cursors.num_cursor_flag = 2;
+				}else if(osc->ch2.cursors.num_cursor_flag == 2){
+					osc->ch2.cursors.num_cursor_flag = 1;
+				}
+			}
+		}
 		break;
 	case SelectionTIME_BASE:
 		osc->timeBaseIndex += htim1.Instance->CNT;
@@ -384,7 +507,6 @@ void drawMenu(Oscilloscope_channel* ch){
 	char buf[10];
 	uint8_t color1 = GREY;
 	uint8_t color2 = GREY;
-	uint8_t color3 = GREY;
 	switch(ch->changedParameter){
 	case VerticalScale:
 		color1 = WHITE;
@@ -422,20 +544,113 @@ void drawMainMenu(uint8_t color){
 	drawRectangleRoundedFrame(425, 92, 52, 40, color);
 }
 
-void drawCursorsMenu(uint8_t color){
-	drawRectangleRoundedFrame(423, 32, 56, 253, color);
+void drawCursorsMenu(Oscilloscope * osc){
 
-	LCD_Font(426, 46, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
+	char buf[20];
+	drawRectangleRoundedFrame(423, 32, 56, 253, WHITE);
 
-	LCD_Font(436, 74, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
-	drawRectangleRoundedFrame(425, 50, 52, 40, color);
+	LCD_Font(425, 45, "Cursors", _Open_Sans_Bold_12, 1, WHITE);
 
-	drawImageTransparent(443, 110, 15, 7, arrowLeftRight);
-	drawRectangleRoundedFrame(425, 92, 52, 40, color);
+	drawRectangleRoundedFrame(425, 50, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 92, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 134, 52, 40, WHITE);
+	drawRectangleRoundedFrame(425, 243, 52, 40, WHITE);
 
-	drawImageTransparent(447, 108 + 40, 8, 15, arrowUpDown);
-	drawRectangleRoundedFrame(425, 92 + 42, 52, 40, color);
+	if(osc->active_cursor_channel == CursorChannel_1){
 
+		if(osc->ch1.cursors.cursor_type == CursorType_TIME){
+			if(osc->ch1.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH1_TimeCursor_1;
+			}else if(osc->ch1.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH1_TimeCursor_2;
+			}
+
+	}else if(osc->ch1.cursors.cursor_type == CursorType_VOLTAGE){
+		if(osc->ch1.cursors.num_cursor_flag == 1){
+			osc->changedCursor = CH1_VoltageCursor_1;
+		}else if(osc->ch1.cursors.num_cursor_flag == 2){
+			osc->changedCursor = CH1_VoltageCursor_2;
+		}
+	}
+
+
+		LCD_Font(432, 74, "Ch 1", _Open_Sans_Bold_12, 1, YELLOW);
+		if(osc->ch1.cursors.cursor_type == CursorType_DISABLE){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+			LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
+		}else if(osc->ch1.cursors.cursor_type  == CursorType_TIME){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, WHITE);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+			LCD_Font(436, 235, "time", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%d", osc->ch1.cursors.calculated_time);
+			LCD_Font(436, 280,buf, _Open_Sans_Bold_12, 1, YELLOW);
+		}else if(osc->ch1.cursors.cursor_type  == CursorType_VOLTAGE){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, WHITE);
+			LCD_Font(426, 235, "voltage", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%d", osc->ch1.cursors.calculated_voltage);
+			LCD_Font(436, 280,buf, _Open_Sans_Bold_12, 1, YELLOW);
+		}
+
+	}else if(osc->active_cursor_channel == CursorChannel_2){
+		if(osc->ch2.cursors.cursor_type == CursorType_TIME){
+			if(osc->ch2.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH2_TimeCursor_1;
+			}else if(osc->ch2.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH2_TimeCursor_2;
+			}
+
+		}else if(osc->ch2.cursors.cursor_type == CursorType_VOLTAGE){
+			if(osc->ch2.cursors.num_cursor_flag == 1){
+				osc->changedCursor = CH2_VoltageCursor_1;
+			}else if(osc->ch2.cursors.num_cursor_flag == 2){
+				osc->changedCursor = CH2_VoltageCursor_2;
+			}
+		}
+
+		LCD_Font(432, 74, "Ch 2", _Open_Sans_Bold_12, 1, BLUE);
+		if(osc->ch2.cursors.cursor_type == CursorType_DISABLE){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+			LCD_Font(425, 235, "disable", _Open_Sans_Bold_12, 1, GREY);
+		}else if(osc->ch2.cursors.cursor_type  == CursorType_TIME){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, WHITE);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, GREY);
+			LCD_Font(436, 235, "time", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%d", osc->ch2.cursors.calculated_time);
+			LCD_Font(436, 280,buf, _Open_Sans_Bold_12, 1, BLUE);
+		}else if(osc->ch2.cursors.cursor_type  == CursorType_VOLTAGE){
+			drawImageTransparentColored(443, 109, 15, 7, arrowLeftRight, GREY);
+			drawImageTransparentColored(447, 148, 8, 15, arrowUpDown, WHITE);
+			LCD_Font(426, 235, "voltage", _Open_Sans_Bold_12, 1, WHITE);
+			sprintf(buf,"%d", osc->ch2.cursors.calculated_voltage);
+			LCD_Font(436, 280,buf, _Open_Sans_Bold_12, 1, BLUE);
+		}
+	}
+
+	if(osc->active_cursor_channel == CursorChannel_1){
+		if(osc->ch1.cursors.cursor_type == CursorType_TIME){
+			drawCursorsTime(&osc->ch1.cursors, osc->timeBase_us ,RED);
+		}else if(osc->ch1.cursors.cursor_type == CursorType_VOLTAGE){
+			drawCursorsVoltage(&osc->ch1.cursors, osc->ch1.y_scale_mV, RED);
+		}
+	}else if(osc->active_cursor_channel == CursorChannel_2){
+		if(osc->ch2.cursors.cursor_type == CursorType_TIME){
+			drawCursorsTime(&osc->ch2.cursors, osc->timeBase_us, RED);
+		}else if(osc->ch2.cursors.cursor_type == CursorType_VOLTAGE){
+			drawCursorsVoltage(&osc->ch2.cursors, osc->ch2.y_scale_mV, RED);
+		}
+	}
+
+}
+
+void changeActiveCursorChannel(enum ActiveCursorChannel active_cursor_channel){
+	if(active_cursor_channel == CursorChannel_1){
+		 active_cursor_channel = CursorChannel_2;
+	}else if(active_cursor_channel == CursorChannel_2){
+		 active_cursor_channel = CursorChannel_1;
+	}
 }
 
 void drawFFTMenu(Oscilloscope* osc){
