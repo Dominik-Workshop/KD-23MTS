@@ -12,8 +12,16 @@ void drawCursorsTime(Channel_cursors * cursors, uint32_t time_per_grid, enum col
 
 	cursors->calculated_time = time_1 - time_2;
 
-	drawFastVLine(cursors->time_cursor_1, SCOPE_Y_OFFSET, SCOPE_Y, color);
-	drawFastVLine(cursors->time_cursor_2, SCOPE_Y_OFFSET, SCOPE_Y, color);
+	if(cursors->num_cursor_flag == 2){
+		drawFastVDottedLine(cursors->time_cursor_1, SCOPE_Y_OFFSET, SCOPE_Y, color);
+		drawFastVLine(cursors->time_cursor_2, SCOPE_Y_OFFSET, SCOPE_Y, color);
+	}
+	else{
+		drawFastVLine(cursors->time_cursor_1, SCOPE_Y_OFFSET, SCOPE_Y, color);
+		drawFastVDottedLine(cursors->time_cursor_2, SCOPE_Y_OFFSET, SCOPE_Y, color);
+
+	}
+
 
 	/*sprintf(buf,"%d", cursors->calculated_time);
 	LCD_Font(426, 280, buf, _Open_Sans_Bold_12, 1, color);*/
@@ -31,8 +39,15 @@ void drawCursorsVoltage(Channel_cursors * cursors,  uint32_t volt_per_grid, enum
 
 	cursors->calculated_voltage  = volt_1 - volt_2;
 
-	drawFastHLine(0, cursors->voltage_cursor_1 + SCOPE_Y_OFFSET, SCOPE_X, color);
-	drawFastHLine(0, cursors->voltage_cursor_2 + SCOPE_Y_OFFSET, SCOPE_X, color);
+	if(cursors->num_cursor_flag == 2){
+		drawFastHDottedLine(0, cursors->voltage_cursor_1 + SCOPE_Y_OFFSET, SCOPE_X, color);
+		drawFastHLine(0, cursors->voltage_cursor_2 + SCOPE_Y_OFFSET, SCOPE_X, color);
+	}
+	else{
+		drawFastHLine(0, cursors->voltage_cursor_1 + SCOPE_Y_OFFSET, SCOPE_X, color);
+		drawFastHDottedLine(0, cursors->voltage_cursor_2 + SCOPE_Y_OFFSET, SCOPE_X, color);
+	}
+
 	/*sprintf(buf,"%d", cursors->calculated_voltage);
 	LCD_Font(426, 280, buf, _Open_Sans_Bold_12, 1, color);*/
 

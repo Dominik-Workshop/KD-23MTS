@@ -403,13 +403,13 @@ void change_cursors(Oscilloscope * osc){
             break;
 
         case CH1_VoltageCursor_2:
-            osc->ch1.cursors.voltage_cursor_2 -=  htim1.Instance->CNT;
+            osc->ch1.cursors.voltage_cursor_2 +=  htim1.Instance->CNT;
             if(osc->ch1.cursors.voltage_cursor_2 > SCOPE_Y){osc->ch1.cursors.voltage_cursor_2 = SCOPE_Y;}
             if(osc->ch1.cursors.voltage_cursor_2 < 0){osc->ch1.cursors.voltage_cursor_2 = 0;}
             break;
 
         case CH2_TimeCursor_1:
-        	osc->ch2.cursors.time_cursor_1 -=  htim1.Instance->CNT;
+        	osc->ch2.cursors.time_cursor_1 +=  htim1.Instance->CNT;
         	if(osc->ch2.cursors.time_cursor_1  > SCOPE_X){osc->ch2.cursors.time_cursor_1 = SCOPE_X;}
         	if(osc->ch2.cursors.time_cursor_1  < 0){osc->ch2.cursors.time_cursor_1  = 0;}
         	break;
@@ -631,15 +631,15 @@ void drawCursorsMenu(Oscilloscope * osc){
 
 	if(osc->active_cursor_channel == CursorChannel_1){
 		if(osc->ch1.cursors.cursor_type == CursorType_TIME){
-			drawCursorsTime(&osc->ch1.cursors, osc->timeBase_us ,RED);
+			drawCursorsTime(&osc->ch1.cursors, osc->timeBase_us, WHITE);
 		}else if(osc->ch1.cursors.cursor_type == CursorType_VOLTAGE){
-			drawCursorsVoltage(&osc->ch1.cursors, osc->ch1.y_scale_mV, RED);
+			drawCursorsVoltage(&osc->ch1.cursors, osc->ch1.y_scale_mV, WHITE);
 		}
 	}else if(osc->active_cursor_channel == CursorChannel_2){
 		if(osc->ch2.cursors.cursor_type == CursorType_TIME){
-			drawCursorsTime(&osc->ch2.cursors, osc->timeBase_us, RED);
+			drawCursorsTime(&osc->ch2.cursors, osc->timeBase_us, WHITE);
 		}else if(osc->ch2.cursors.cursor_type == CursorType_VOLTAGE){
-			drawCursorsVoltage(&osc->ch2.cursors, osc->ch2.y_scale_mV, RED);
+			drawCursorsVoltage(&osc->ch2.cursors, osc->ch2.y_scale_mV, WHITE);
 		}
 	}
 
