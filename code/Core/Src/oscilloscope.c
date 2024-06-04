@@ -95,14 +95,14 @@ uint32_t calculate_RMS(uint32_t *waveform) {
 
 
 void draw_waveform(Oscilloscope_channel* ch, uint64_t timeBase_us, int offset, int stop){
-	if(!stop){
-		for(int i = 0; i < 420; ++i){
-				if(ch->number == 1)
-					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset+(360/timeBase_us)])*1000;
-				else
-					ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
-			}
+	const uint offsetBetweenChannels = 360;
+	for(int i = 0; i < CANVA_WIDTH; ++i){
+		if(ch->number == 1)
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset+(offsetBetweenChannels/timeBase_us)])*1000;
+		else
+			ch->waveform_display[i] = convertAdcToVoltage(ch->waveform_raw_adc[i+offset])*1000;
 	}
+
 
 	for(int i = 0; i < 420-1; ++i){
 		//ch->waveform_display[i] = ch->waveform[i];
@@ -464,6 +464,9 @@ void serveEncoder(Oscilloscope* osc){
 		}
 		break;
 	case SelectionTIME_BASE:
+		if(osc->stop){
+			break;
+		}
 		osc->timeBaseIndex += htim1.Instance->CNT;
 		if(osc->timeBaseIndex < 0)
 			osc->timeBaseIndex = 0;

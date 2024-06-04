@@ -214,6 +214,11 @@ int main(void)
 		  Error_Handler();
 	  }
 
+	  if(oscilloscope.stop){
+	  		  HAL_COMP_Stop(&hcomp1);
+	  	  }else{
+	  		  HAL_COMP_Start(&hcomp1);
+	  	  }
 	  drawChannels0Vmarkers(&oscilloscope.ch1);
 	  drawChannels0Vmarkers(&oscilloscope.ch2);
 	  if(ready_to_draw){
@@ -225,6 +230,7 @@ int main(void)
 		  ready_to_draw = 0;
 		  done_drawing = 1;
 	  }
+
 	  else if(oscilloscope.stop){
 		  if(oscilloscope.ch1.isOn)
 			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
