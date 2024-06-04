@@ -1,6 +1,8 @@
 # KD 23MTS
 Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
 
+<img align="center" src="images/photos/2ch_on.jpg">
+
 ## Project status: in construction.
 
 ## Project goals:
