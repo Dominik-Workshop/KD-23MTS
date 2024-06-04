@@ -48,6 +48,7 @@ void oscilloscopeInit(Oscilloscope* osc){
 	osc -> changedCursor = CH1_TimeCursor_1;
 
 	osc -> fft_active_channel = FFT_Channel_1;
+	osc->is_fft_on = 0;
 }
 
 void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
@@ -62,6 +63,7 @@ void oscilloscope_channel_init(Oscilloscope_channel* ch, uint8_t color){
 	ch->cursors.voltage_cursor_2 = 200;
 	ch->cursors.cursor_type = CursorType_DISABLE;
 	ch->cursors.num_cursor_flag = 1;
+
 }
 
 void oscilloscope_channel_toggle_on_off(Oscilloscope_channel* ch){
@@ -311,6 +313,9 @@ void serveTouchScreen(Oscilloscope* osc){
 					osc -> selection = SelectionFFT_CHANGE_CHANNEL;
 			}
 		}
+		if((osc->selection != SelectionFFT) && (osc->selection != SelectionFFT_CHANGE_CHANNEL)){
+			osc->is_fft_on = 0;
+		}
 	}else
 		osc->clickedItem = Nothing;
 
@@ -356,25 +361,26 @@ void serveTouchScreen(Oscilloscope* osc){
 		drawCursorsMenu(osc);
 		break;
 	case SelectionFFT:
+		osc->is_fft_on = 1;
 		drawFFTMenu(osc);
-		uint64_t sampling_frequency = 4210526 / osc->timeBase_us/10;
-		if(osc->fft_active_channel == FFT_Channel_1){
-			calculateFFT(osc->ch1.waveform_raw_adc, sampling_frequency);
-		}else if(osc->fft_active_channel == FFT_Channel_2){
-			calculateFFT(osc->ch2.waveform_raw_adc, sampling_frequency);
+		if(osc->fft_active_channel== FFT_Channel_1){
+			drawFFTgraph(&osc->ch1);
+		}else if(osc->fft_active_channel = FFT_Channel_2){
+			drawFFTgraph(&osc->ch2);
 		}
 		break;
 	case SelectionFFT_CHANGE_CHANNEL:
-			if( osc->fft_active_channel== FFT_Channel_1){
-				osc->fft_active_channel = FFT_Channel_2;
-			}else if(osc->fft_active_channel == FFT_Channel_2){
-				osc->fft_active_channel = FFT_Channel_1;
-			}
-			//changeActiveCursorChannel(osc->active_cursor_channel);
+		if( osc->fft_active_channel== FFT_Channel_1){
+			osc->fft_active_channel = FFT_Channel_2;
+		}else if(osc->fft_active_channel == FFT_Channel_2){
+			osc->fft_active_channel = FFT_Channel_1;
+		}
+		//changeActiveCursorChannel(osc->active_cursor_channel);
 
-			osc -> selection = SelectionFFT;
-			drawFFTMenu(osc);
-			break;
+		osc -> selection = SelectionFFT;
+		osc->is_fft_on = 1;
+		drawFFTMenu(osc);
+		break;
 	case SelectionTRIGGER:
 		drawTriggerMenu(osc);
 		break;
@@ -719,18 +725,65 @@ void drawFFTMenu(Oscilloscope* osc){
 		LCD_Font(437, 93, "Ch 2", _Open_Sans_Bold_12, 1, WHITE);
 	}
 
+}
+
+void drawFFTgraph(Oscilloscope_channel * ch){
+	uint32_t num_of_stripes;
+	uint32_t stripe_width;
+	uint32_t stripe_max_height;
+	uint32_t max_amp = 0;
+	uint32_t max_freq = 0;
+	uint32_t amp_stripes_h[FFT_SIZE/2];
+	uint32_t amp_stripes_y[FFT_SIZE/2];
+	uint32_t stripes_counter = 0;
 
 
+
+
+	num_of_stripes = FFT_SIZE/2;
+
+	stripe_width = (2 * SCOPE_X)/FFT_SIZE;
+	stripe_max_height = SCOPE_Y;
+
+	for(int i = 0; i < FFT_SIZE/2;++i){
+		if(ch->fft_amplitude[i] > max_amp){
+			max_amp = ch->fft_amplitude[i];
+		}
+	}
+
+	for(int i = 0; i < FFT_SIZE/2;++i){
+		if(ch->fft_frequency[i] > max_freq){
+			max_freq = ch->fft_frequency[i];
+		}
+	}
+
+	for(int i = 0; i < FFT_SIZE/2; ++i){
+		amp_stripes_h[i] = (ch->fft_amplitude[i]*stripe_max_height)/max_amp;
+		amp_stripes_y[i] = SCOPE_Y_OFFSET + (stripe_max_height  - amp_stripes_h[i]);
+	}
+
+
+
+	for(int i = 0; i < num_of_stripes; ++i){
+
+		for(int j = 0; j < stripe_width; ++j){
+			drawFastVLine(stripes_counter, amp_stripes_y[i], amp_stripes_h[i], ch->color);
+			stripes_counter++;
+		}
+	}
+
+	ch->frequency_per_stripe = max_freq/num_of_stripes;
 
 }
 
 
-void calculateFFT(uint32_t *waveform, uint32_t sampling_frequency){
+
+void calculateFFT(Oscilloscope_channel * ch, uint32_t sampling_frequency){
 
 	char buff[20];
 	uint32_t signal[FFT_SIZE];
 	for(int i = 0; i < FFT_SIZE; ++i){
-		signal[i] = waveform[i];
+		signal[i] = ch->waveform_raw_adc[i];
 	}
 
 	Complex X[FFT_SIZE];
@@ -742,15 +795,24 @@ void calculateFFT(uint32_t *waveform, uint32_t sampling_frequency){
 	// Obliczanie FFT
 	fft(X, FFT_SIZE);
 
-	double amplitude[FFT_SIZE / 2];
-	double frequency[FFT_SIZE / 2];
 	for (int i = 0; i < FFT_SIZE / 2; i++) {
-		amplitude[i] = sqrt(X[i].real * X[i].real + X[i].imag * X[i].imag);
-		frequency[i] = (i *sampling_frequency) / FFT_SIZE;
-		printf("AMPLITUDA: %d\t:\t %d :freq\n\r", amplitude[i], frequency[i]);
+		ch->fft_amplitude[i] = sqrt(X[i].real * X[i].real + X[i].imag * X[i].imag);
+		ch->fft_frequency[i] = (i *sampling_frequency) / FFT_SIZE;
+		printf("AMPLITUDA: %d\t:\t %d :freq\n\r", ch->fft_amplitude[i], ch->fft_frequency[i]);
 	}
 
+	uint32_t amp_max = 0;
+	uint32_t freq = 0;
 
+
+	for(int i = 0; i < FFT_SIZE / 2; i++){
+		if(ch->fft_amplitude[i] > amp_max){
+			amp_max = ch->fft_amplitude[i];
+			freq = ch->fft_frequency[i];
+		}
+	}
+
+	ch->channel_frequency = (uint32_t)freq;
 
 
 }
@@ -799,6 +861,8 @@ void drawTriggerMenu(Oscilloscope* osc){
 	LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
 }
 
+
+
 void drawMeasurements(Oscilloscope* osc){
 	char buf[20];
 	if(osc->ch1.isOn){
@@ -806,12 +870,16 @@ void drawMeasurements(Oscilloscope* osc){
 		LCD_Font(90, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform_display));
 		LCD_Font(190, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
+		sprintf(buf,"freq = %d Hz", osc->ch1.channel_frequency);
+		LCD_Font(290, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 	}
 	if(osc->ch2.isOn){
 		sprintf(buf,"Vpp=%dmV", calculate_peak_to_peak(osc->ch2.waveform_display));
 		LCD_Font(90, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform_display));
 		LCD_Font(190, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
+		sprintf(buf,"freq = %d Hz", osc->ch2.channel_frequency);
+		LCD_Font(290, 13, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 	}
 }
 

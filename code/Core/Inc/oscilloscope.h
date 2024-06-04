@@ -91,6 +91,8 @@ enum FFT_ActiveChannel{
 	FFT_Channel_2
 };
 
+
+
 typedef struct {
     double real;
     double imag;
@@ -115,6 +117,10 @@ typedef struct osc_ch{
 
 	enum ChangedParameter changedParameter;
 	Channel_cursors cursors;
+	uint32_t channel_frequency;
+	double fft_amplitude[FFT_SIZE/2];
+	double fft_frequency[FFT_SIZE/2];
+	uint32_t frequency_per_stripe;
 
 }Oscilloscope_channel;
 
@@ -138,7 +144,13 @@ typedef struct osc{
 
 	enum ActiveCursorChannel active_cursor_channel;
 	enum ChangedCursor changedCursor;
+
+
 	enum FFT_ActiveChannel fft_active_channel;
+
+	uint8_t is_fft_on;
+
+
 }Oscilloscope;
 
 void oscilloscopeInit(Oscilloscope* osc);
@@ -172,9 +184,9 @@ void drawMainMenuButton();
 void drawMainMenu(uint8_t color);
 
 void drawFFTMenu(Oscilloscope* osc);
-void calculateFFT(uint32_t *waveform, uint32_t sampling_frequency);
+void calculateFFT(Oscilloscope_channel * ch, uint32_t sampling_frequency);
 void fft(Complex *X, int N);
-
+void drawFFTgraph(Oscilloscope_channel * ch);
 
 void drawTriggerMenu(Oscilloscope* osc);
 void drawMeasurements(Oscilloscope* osc);
