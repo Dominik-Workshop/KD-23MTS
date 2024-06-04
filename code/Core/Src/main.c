@@ -59,6 +59,7 @@ volatile uint8_t SPI1_TX_completed_flag = 1;
 static int conv_done = 0;
 int ready_to_draw = 0;
 volatile int done_drawing = 1;
+volatile uint8_t comparatorTriggeredFlag;
 Oscilloscope oscilloscope;
 
 
@@ -77,6 +78,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
 }
 
 void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
+	comparatorTriggeredFlag = 1;
 	if(conv_done & done_drawing){
 		conv_done = 0;
 		HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
@@ -84,6 +86,7 @@ void HAL_COMP_TriggerCallback(COMP_HandleTypeDef *hcomp){
 		ready_to_draw = 1;
 		done_drawing = 0;
 	}
+	//HAL_COMP_Stop(&hcomp1);
 }
 
 /**
@@ -103,6 +106,17 @@ int conv_voltage_to_DAC(float voltage){
 		dac = DAC_RESOLUTION;
 	}
 	return (int) dac;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim == &htim4){
+		if(!comparatorTriggeredFlag && !oscilloscope.stop){
+			HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
+			HAL_ADC_Start_DMA(&hadc2, (uint32_t*) oscilloscope.ch2.waveform_raw_adc , MEMORY_DEPTH);
+
+			done_drawing = 0;
+		}
+	}
 }
 /* USER CODE END 0 */
 
@@ -144,10 +158,11 @@ int main(void)
   MX_DAC1_Init();
   MX_COMP1_Init();
   MX_ADC2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
 
-  //HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, conv_voltage_to_DAC(1.5));
+  HAL_TIM_Base_Start_IT(&htim4);
   HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
   HAL_COMP_Start(&hcomp1);
   //HAL_COMP_Stop(&hcomp1);
@@ -215,10 +230,10 @@ int main(void)
 	  }
 
 	  if(oscilloscope.stop){
-	  		  HAL_COMP_Stop(&hcomp1);
-	  	  }else{
-	  		  HAL_COMP_Start(&hcomp1);
-	  	  }
+		  HAL_COMP_Stop(&hcomp1);
+	  }else{
+		  HAL_COMP_Start(&hcomp1);
+	  }
 	  drawChannels0Vmarkers(&oscilloscope.ch1);
 	  drawChannels0Vmarkers(&oscilloscope.ch2);
 	  if(ready_to_draw){
@@ -229,9 +244,10 @@ int main(void)
 		  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
 		  ready_to_draw = 0;
 		  done_drawing = 1;
+		  comparatorTriggeredFlag = 0;
 	  }
 
-	  else if(oscilloscope.stop){
+	  else if(oscilloscope.stop || !comparatorTriggeredFlag){
 		  if(oscilloscope.ch1.isOn)
 			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
 		  if(oscilloscope.ch2.isOn)
@@ -331,6 +347,8 @@ void SystemClock_Config(void)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
 	conv_done = 1;
 	HAL_ADC_Stop_DMA(hadc);
+	ready_to_draw = 1;
+	//HAL_COMP_Start(&hcomp1);
 }
 /* USER CODE END 4 */
 
