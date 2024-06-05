@@ -236,7 +236,7 @@ int main(void)
 	  }
 	  drawChannels0Vmarkers(&oscilloscope.ch1);
 	  drawChannels0Vmarkers(&oscilloscope.ch2);
-	  if(oscilloscope.is_fft_on == 0){
+//	  if(oscilloscope.is_fft_on == 0){
 	  	  if(ready_to_draw){
 			  if(oscilloscope.ch1.isOn)
 				  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
@@ -254,7 +254,7 @@ int main(void)
 			  if(oscilloscope.ch2.isOn)
 				  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
 		  }
-  	  }
+  	  //}
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
 		  //draw_waveform(& oscilloscope.ch1);

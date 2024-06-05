@@ -719,9 +719,9 @@ void drawFFTMenu(Oscilloscope* osc){
 	LCD_Font(429, 64, "Source", _Open_Sans_Bold_12, 1, WHITE);
 	drawRectangleRoundedFrame(  425, 68, 52, 40, DARK_PINK);
 
-	if(osc -> active_cursor_channel == FFT_Channel_1){
+	if(osc->fft_active_channel == FFT_Channel_1){
 		LCD_Font(437, 93, "Ch 1", _Open_Sans_Bold_12, 1, WHITE);
-	}else if(osc -> active_cursor_channel == FFT_Channel_2){
+	}else if(osc->fft_active_channel == FFT_Channel_2){
 		LCD_Font(437, 93, "Ch 2", _Open_Sans_Bold_12, 1, WHITE);
 	}
 
@@ -804,7 +804,6 @@ void calculateFFT(Oscilloscope_channel * ch, uint32_t sampling_frequency){
 	uint32_t amp_max = 0;
 	uint32_t freq = 0;
 
-
 	for(int i = 0; i < FFT_SIZE / 2; i++){
 		if(ch->fft_amplitude[i] > amp_max){
 			amp_max = ch->fft_amplitude[i];
@@ -813,8 +812,6 @@ void calculateFFT(Oscilloscope_channel * ch, uint32_t sampling_frequency){
 	}
 
 	ch->channel_frequency = (uint32_t)freq;
-
-
 }
 
 

@@ -26,7 +26,7 @@ extern  TS_DrvTypeDef         *ts_drv;
 #define LCD_BRIGHTNESS 1000 // 0-1000
 
 #define MEMORY_DEPTH  600//512
-#define FFT_SIZE 256
+#define FFT_SIZE 64
 #define CANVA_MIDDLE_V 158
 #define CANVA_WIDTH 420
 
