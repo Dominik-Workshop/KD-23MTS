@@ -218,8 +218,8 @@ void displayHorizontallOffset(Oscilloscope* osc){
 	if(osc->selection == SelectionMOVE_WAVEFORMS_HORIZONTALLY){
 		color = WHITE;
 	}
-	drawImageTransparentColored(358, 11, 15, 7, arrowLeftRight, WHITE);
-	drawRectangleRoundedFrame(  340, 3, 50, 22, color);
+	drawImageTransparentColored(268, 299, 15, 7, arrowLeftRight, WHITE);
+	drawRectangleRoundedFrame(250, 288, 50, 28, color);
 }
 
 void serveTouchScreen(Oscilloscope* osc){
@@ -258,7 +258,8 @@ void serveTouchScreen(Oscilloscope* osc){
 		else if(osc->touchScreen.X < 70  && osc->touchScreen.Y < 25){			// Time per division
 			osc->selection = SelectionTIME_BASE;
 		}
-		else if(osc->touchScreen.X > 340  && osc->touchScreen.X < 390  && osc->touchScreen.Y < 25){			// Time per division
+
+		else if(osc->touchScreen.X > 250  && osc->touchScreen.X < 300  && osc->touchScreen.Y > 288){	// Move horizontally
 			osc->selection = SelectionMOVE_WAVEFORMS_HORIZONTALLY;
 		}
 
@@ -867,7 +868,7 @@ void drawMeasurements(Oscilloscope* osc){
 		LCD_Font(87, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch1.waveform_display));
 		LCD_Font(187, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
-		sprintf(buf,"f=%d Hz", osc->ch1.channel_frequency);
+		sprintf(buf,"f=%dHz", osc->ch1.channel_frequency);
 		LCD_Font(290, 13, buf, _Open_Sans_Bold_12, 1, osc->ch1.color);
 	}
 	if(osc->ch2.isOn){
@@ -875,7 +876,7 @@ void drawMeasurements(Oscilloscope* osc){
 		LCD_Font(87, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 		sprintf(buf,"Vrms=%dmV", calculate_RMS(osc->ch2.waveform_display));
 		LCD_Font(187, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
-		sprintf(buf,"f=%d Hz", osc->ch2.channel_frequency);
+		sprintf(buf,"f=%dHz", osc->ch2.channel_frequency);
 		LCD_Font(290, 27, buf, _Open_Sans_Bold_12, 1, osc->ch2.color);
 	}
 }

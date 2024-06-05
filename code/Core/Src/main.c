@@ -242,7 +242,6 @@ int main(void)
 			  draw_waveform(& oscilloscope.ch1, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
 		  if(oscilloscope.ch2.isOn)
 			  draw_waveform(& oscilloscope.ch2, oscilloscope.timeBase_us, oscilloscope.x_offset, oscilloscope.stop);
-		  //HAL_ADC_Start_DMA(&hadc1, (uint32_t*) oscilloscope.ch1.waveform_raw_adc , MEMORY_DEPTH);
 		  ready_to_draw = 0;
 		  done_drawing = 1;
 		  comparatorTriggeredFlag = 0;
@@ -257,7 +256,7 @@ int main(void)
 
 	  serveTouchScreen(&oscilloscope);
 	  serveEncoder(&oscilloscope);
-		  //draw_waveform(& oscilloscope.ch1);
+
 	  drawChanellVperDev(0, & oscilloscope.ch1);
 	  drawChanellVperDev(110, & oscilloscope.ch2);
 	  uint32_t sampling_frequency = 4210526/(oscilloscope.timeBase_us/10);
