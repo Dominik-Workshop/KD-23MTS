@@ -25,8 +25,8 @@ extern  TS_DrvTypeDef         *ts_drv;
 #define LCD_HEIGHT 320
 #define LCD_BRIGHTNESS 1000 // 0-1000
 
-#define MEMORY_DEPTH  600//512
-#define FFT_SIZE 64
+#define MEMORY_DEPTH  512//512
+#define FFT_SIZE 128
 #define CANVA_MIDDLE_V 158
 #define CANVA_WIDTH 420
 
@@ -119,7 +119,7 @@ typedef struct osc_ch{
 	Channel_cursors cursors;
 	uint32_t channel_frequency;
 	double fft_amplitude[FFT_SIZE/2];
-	double fft_frequency[FFT_SIZE/2];
+	int32_t fft_frequency[FFT_SIZE/2];
 	uint32_t frequency_per_stripe;
 
 }Oscilloscope_channel;
