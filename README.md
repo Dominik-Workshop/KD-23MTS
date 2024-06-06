@@ -1,14 +1,21 @@
 # KD 23MTS
-Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
+
+![Microcontroller](https://img.shields.io/badge/Board-NUCLEO_L476RG-white) 
+![Platform](https://img.shields.io/badge/Platform-STM32cubeIDE_1.4.0-darkcyan)
+
+This project is a simple oscilloscope built using an STML476RG microcontroller and a 4" TFT SPI 480x320px V2.1 LCD with an integrated ILI9488 driver and touchscreen with an XPT2046 driver. It was developed for the Robot Controllers project during the 6th semester of AiR at PWR.
+
+
 
 <img align="center" src="images/photos/2ch_on.jpg">
+<img align="center" src="images/photos/fft_squarewave.jpg">
 
-## Project status: in construction.
-
-## Project goals:
-  - 2 channells
-  - FFT
-  - RMS, peak-to-peak, frequency measurements
+## Project Goals
+  - 2 channels
+  - FFT (Fast Fourier Transform)
+  - RMS, peak-to-peak, and frequency measurements
+  - Horizontal and vertical cursors
+  - Normal mode trigger (channel 1)
 
 ## Connections
 
@@ -40,6 +47,18 @@ Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
   | PA8     | ENC_B         |
   | PC0     | ENC_BTN       |
 
+- Oscilloscope channels
+  | STM pin | Component pin   | Signal description |
+  |---------|-----------------|--------------------|
+  | PC5     | BNC connector 1 | Channel 1          |
+  | PB1     | BNC connector 2 | Channel 2          |
+
+
+- Test signal output
+  | STM pin | Component pin     | Signal description |
+  |---------|-------------------|--------------------|
+  | PB0     | GEN OUT connector | 1kHz test signal   |
+
 ## Touchscreen calibration
 1. Navigate to the file `oscilloscope.c` and locate line 35. Remove the comment slashes (`//`) to activate the function `touchScreenCalibration();`. Save the changes and upload the code to the device.
 2. Open a Serial monitor on your PC. You should observe the following prompt:
@@ -56,6 +75,18 @@ Oscilloscope built with STML476RG and a 4" LCD with ili9488 driver.
 ## Used tools: 
 <img align="center" height="64" src="images/logos/STM32CubeIDE.png">
 
+## Used Libraries
+
+- **Touchscreen Library:** [stm32_hal_graphics_display_drivers](https://github.com/RobertoBenjami/stm32_hal_graphics_display_drivers) - This library was chosen for its effective calibration function and reliable touch detection.
+- **LCD Library:** [ILI9488-DMA-SPI-STM32](https://github.com/offpic/ILI9488-DMA-SPI-STM32-4-3.95-INCH-STM32F103-TOUCH) - This library was selected for its high display speed. It was modified to use a frame buffer to prevent flickering.
+
+(No need to install any libraries; the appropriate files are included in the project.)
+
+
 ## Authors:
 - Dominik Pluta
 - Kamil Winnicki
+
+## Special thanks
+
+Special thanks to [**Eryk Możdzeń**](https://github.com/Eryk-Mozdzen), who helped with programming.
