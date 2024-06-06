@@ -7,7 +7,7 @@ This project is a simple oscilloscope built using an STML476RG microcontroller a
 
 
 
-<img align="center" src="images/photos/2ch_on.jpg">
+<img align="center" src="images/photos/curosrs_time.jpg">
 <img align="center" src="images/photos/fft_squarewave.jpg">
 
 ## Project Goals
