@@ -15,7 +15,7 @@ This project is a simple oscilloscope built using an STML476RG microcontroller a
   - FFT (Fast Fourier Transform)
   - RMS, peak-to-peak, and frequency measurements
   - Horizontal and vertical cursors
-  - Normal mode trigger (channel 1)
+  - Auto mode trigger (channel 1)
 
 ## Connections
 
@@ -84,8 +84,8 @@ This project is a simple oscilloscope built using an STML476RG microcontroller a
 
 
 ## Authors:
-- Dominik Pluta
-- Kamil Winnicki
+- [**Dominik Pluta**](https://github.com/Dominik-Workshop)
+- [**Kamil Winnicki**](https://github.com/KamilWuu)
 
 ## Special thanks
 
